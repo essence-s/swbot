@@ -17,157 +17,134 @@ const {
 	convertMP3,
 	generateRandomName,
 	deleteFile,
+	getVideoInfo2,
+	downloadVideo,
 } = require('./utils');
 
 const { saveData, getDataUser, addSeletedVideoInfo } = require('./adp');
 
 const YTD = {
 	invo: '.yt',
-	data: [
-		{
-			word: 'Escriba su búsqueda :V',
-			execfunction: async ({ ctx, sendMessage, endFlow }) => {
-				let message = ctx.messages[0].message.conversation;
-				let pushName = ctx.messages[0].pushName;
+	description: 'Descargar videos o audios de YouTube',
+	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
+		let message = ctx.messages[0].message.conversation;
 
-				if (message.toLowerCase() == 'exit') return endFlow('exit');
+		// const message = ctx.messages[0].message.conversation;
 
-				let { items } = await getDataSearch(`${message}`, 5);
-				let parsedData = parseSearchData(items);
+		// si encuentra en el mensaje un url de yt redirige al subflujo de descarga rápida
+		const ytUrlRegex = /^\.yt\s+(https?:\/\/[^\s]+)/i;
+		const match = message.match(ytUrlRegex);
+		if (match) {
+			const data = {
+				urlVideo: match[1],
+			};
+			ctx.data = data;
+			console.log(match[1]);
+			redirectToSubflow('fastDownload');
 
-				saveData(pushName, (dataAct) => {
-					return {
-						...dataAct,
-						pushName: pushName,
-						dataSaveSearch: parsedData,
-					};
-				});
-
-				let dataFormatTextSend = messageCustomFormat(parsedData);
-				// await flowDynamic({ body: dataFormatTextSend })
-				await sendMessage(dataFormatTextSend);
+			// redireccion
+		} else if (message.includes('dino')) {
+			redirectToSubflow('search');
+		}
+	},
+	defaultSubFlow: 'search',
+	subFlows: {
+		search: [
+			{
+				action: async ({ ctx, sendMessage, endFlow }) => {
+					let message = ctx.messages[0].message.conversation;
+					sendMessage({ text: `buscando video. ${message}` });
+				},
 			},
-		},
-		{
-			word: 'Elija con un numero y espere...',
-			execfunction: async ({ ctx, sendMessage, fallBack, endFlow }) => {
-				let message = ctx.messages[0].message.conversation;
-				let pushName = ctx.messages[0].pushName;
-				if (message.toLowerCase() == 'exit') return endFlow('exit');
-				let optionsObject = parseStringValues(message);
+		],
+		fastDownload: [
+			{
+				action: async ({
+					ctx,
+					sendMessage,
+					sendFile,
+					sendSticker,
+					updateMessage,
+					endFlow,
+				}) => {
+					let message = ctx.messages[0].message.conversation;
+					let { urlVideo } = ctx.data;
 
-				let evaluated = evalu(
-					optionsObject.option,
-					optionsObject.format,
-					optionsObject.quality
-				);
-				if (evaluated == 'noDataOption') {
-					// console.log('fallback')
-					return fallBack();
-				}
-
-				addSeletedVideoInfo(pushName, evaluated.dataOptions.option - 1);
-
-				saveData(pushName, (dataAct) => {
-					return {
-						...dataAct,
-						dataOptions: { ...evaluated.dataOptions },
-					};
-				});
-
-				let url = getDataUser(pushName).selectedVideoInfo.videoId;
-
-				if (evaluated.mode == 1) {
-					let datainfoQualitys = await getVideoInfo(url);
-
-					saveData(pushName, (dataAct) => {
-						return {
-							...dataAct,
-							dataQualitys: datainfoQualitys,
-						};
+					// envio de sticker de descargando
+					await sendSticker({
+						filePath: './assets/loader_video3.webp',
+						options: { reply: true },
 					});
 
-					let infoMessague = dataInfoMesague(datainfoQualitys.videos);
+					// envio de mensaje de descarga
+					const msg = await sendMessage({
+						text: `📥 Descargando video... [▓░░░░░░░] 10%`,
+					});
 
-					// console.log(infoMessague)
-					await sendMessage(infoMessague);
-				} else if (evaluated.mode == 2) {
-					await fallBack();
-				}
-			},
-		},
-		{
-			word: 'Elija con un numero la calidad y con letras el formato ejemplo: \n 1 mp3 \n Si no se escoje el formato sera mp4',
-			execfunction: async ({ ctx, endFlow, sendFile, fallBack }) => {
-				let message = ctx.messages[0].message.conversation;
-				let pushName = ctx.messages[0].pushName;
-				if (message.toLowerCase() == 'exit') return endFlow('exit');
-				let dataUser = getDataUser(pushName);
-				let cantVideos = dataUser.dataQualitys.videos.length;
-				const createArrayNum = (num) => {
-					let arrayOptinosLengthVideos = [];
-					for (let i = 1; i <= num; i++) {
-						arrayOptinosLengthVideos.push(i);
-					}
-					return arrayOptinosLengthVideos;
-				};
-				let optionsObject = parseStringValues2(
-					message,
-					createArrayNum(cantVideos)
-				);
-				let urlVideo = dataUser.selectedVideoInfo.videoId;
-				let evaluado = evalu2(
-					optionsObject.format,
-					optionsObject.numOptionQuality
-				);
-				if (evaluado.format == 'mp3') {
-					let ramdomName = generateRandomName();
-					let indexAudio = dataUser.dataQualitys.audios[0].index;
-					let audioPath = await downloadG(urlVideo, indexAudio, ramdomName);
-					let totalSize = await totalFileSize([audioPath]);
-					let statusCheck = checkTotalFileSize(totalSize);
-					if (statusCheck == 'passedLimit') return fallBack();
-					let audioMp3 = await convertMP3(audioPath, ramdomName);
-					let newName = dataUser.selectedVideoInfo.title;
-					let pathNewName = await renameVideo(audioMp3, `${newName}.mp3`);
-					await sendFile(pathNewName);
-					deleteFile([pathNewName, audioPath]);
-				} else {
-					let indexVideo =
-						dataUser.dataQualitys.videos[
-							parseInt(evaluado.numOptionQuality) - 1
-						].index;
-					let indexAudio = dataUser.dataQualitys.audios[0].index;
-					let ramdomNameVideo = generateRandomName();
-					let ramdomNameAudio = generateRandomName();
-					let [videoPath, audioPath] = await Promise.all([
-						downloadG(urlVideo, indexVideo, ramdomNameVideo),
-						downloadG(urlVideo, indexAudio, ramdomNameAudio),
-					]);
-					let totalSize = await totalFileSize([videoPath, audioPath]);
-					let statusCheck = checkTotalFileSize(totalSize);
-					if (statusCheck == 'passedLimit') return fallBack();
-					let newName = dataUser.selectedVideoInfo.title;
-					let nameRamdom = ramdomNameVideo + ramdomNameAudio;
-					let videoWithAudioPath = await joinVideoAndAudio(
-						videoPath,
-						audioPath,
-						nameRamdom
-					);
-					let pathNewName = await renameVideo(
-						videoWithAudioPath,
-						`${newName}.mp4`
-					);
+					// descarga y devuelve la ubicacion del video descargado
+					let pathVideo = '';
 					try {
-						await sendFile(pathNewName);
-					} catch (e) {
-						console.log(e);
+						pathVideo = await downloadVideo({
+							url: urlVideo,
+							resolution: '720',
+							allowLowerQuality: false,
+						});
+					} catch (error) {
+						console.log(error);
+
+						const isFormatUnavailable = error.includes('noResolutionAvailable');
+						if (isFormatUnavailable) {
+							console.warn(' Reintentando con calidad menor o igual');
+							await updateMessage({
+								text: '⚠️ Resolución exacta no disponible. Reintentando con calidad menor o igual...',
+								key: msg.key,
+							});
+
+							try {
+								pathVideo = await downloadVideo({
+									url: urlVideo,
+									resolution: '720',
+									allowLowerQuality: true,
+								});
+							} catch (fallbackError) {
+								console.error('❌ Fallback también falló:', fallbackError);
+
+								await updateMessage({
+									text: '❌ No se pudo descargar el video con ninguna calidad disponible.',
+									key: msg.key,
+								});
+								return;
+							}
+						} else {
+							await updateMessage({
+								text: '❌ Error inesperado al descargar el video.',
+								key: msg.key,
+							});
+							return endFlow({ text: 'error inesperado' });
+						}
 					}
-					deleteFile([pathNewName, videoPath, audioPath]);
-				}
+
+					// actualizar mensaje para la subida del archivo
+					await updateMessage({
+						text: `⚙️ Procesando video... [▓▓▓▓▓░░░] 60%`,
+						key: msg.key,
+					});
+
+					// se esta subiendo el archivo que sera la respuesta del mensaje "reply"
+					await sendFile({ filePath: pathVideo, options: { reply: true } });
+
+					// elimino el video para no ocupar espacio
+					deleteFile([pathVideo]);
+
+					// actualizar el mensaje de decarga y procesamiento terminada
+					await updateMessage({
+						text: `✅ Video descargado y enviado correctamente. [▓▓▓▓▓▓▓▓] 100%`,
+						key: msg.key,
+					});
+				},
 			},
-		},
-	],
+		],
+	},
 };
 
 const superDino = [YTD];

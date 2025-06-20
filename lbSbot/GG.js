@@ -1,8 +1,14 @@
+// const {
+// 	default: makeWASocket,
+// 	DisconnectReason,
+// 	useMultiFileAuthState,
+// } = require('@whiskeysockets/baileys');
 const {
 	default: makeWASocket,
 	DisconnectReason,
 	useMultiFileAuthState,
-} = require('@whiskeysockets/baileys');
+} = require('baileys');
+
 const { Boom } = require('@hapi/boom');
 const log = (pino = require('pino'));
 
@@ -19,7 +25,7 @@ class Connectbaileys {
 		const { state, saveCreds } = await useMultiFileAuthState('bot_sessions');
 		const sock = makeWASocket({
 			// can provide additional config here
-			// printQRInTerminal: true,
+			printQRInTerminal: true,
 			auth: state,
 			logger: log({ level: 'silent' }),
 		});
@@ -48,23 +54,38 @@ class Connectbaileys {
 	initSo(sock) {
 		this.vendor = sock;
 		this.vendor.ev.on('messages.upsert', async (m) => {
-			// console.log(m);
+			// console.log(m.messages);
+
+			// comment
 			if (m.messages[0]?.key.fromMe) return;
+
 			let remoteJid = m.messages[0].key.remoteJid;
+			// let msg = m.messages[0]
 			let message;
 			let otherMe1 = m.messages[0].message?.conversation;
-			let otherMe2 = m.messages[0].message?.extendedTextMessage.text;
-			console.log({ message: m.messages[0].message });
+			let otherMe2 = m.messages[0].message?.extendedTextMessage?.text;
+
+			// console.log({ message: m.messages[0].message });
 			if (otherMe1) {
 				message = otherMe1;
 			} else if (otherMe2) {
 				message = otherMe2;
 			} else {
-				await this.vendor.sendMessage(remoteJid, {
-					text: 'error intente de nuevo',
-				});
+				// await this.vendor.sendMessage(remoteJid, {
+				// 	text: 'error intente de nuevo',
+				// });
+				console.log('message not found');
 				return;
 			}
+
+			// if (message.includes('$$')) {
+			// 	message = message.replace(/\s?\$\$/, '');
+			// } else {
+			// 	return;
+			// } //solo desarrollo
+
+			// console.log(m.messages[0].message);
+			// console.dir(m, { depth: null });
 
 			let numberT = remoteJid.split('@')[0];
 
@@ -72,21 +93,55 @@ class Connectbaileys {
 			let flowCurrent9 = getCurrent(numberT);
 
 			this.dataFlows.forEach(async (flow) => {
+				// si en el flujo del usuario esta activo una invocacion
 				if (flow.invo == flowCurrent9.flowCurrent) {
-					let functionsFlow = new FunctionsFlow(this.vendor, remoteJid);
+					let functionsFlow = new FunctionsFlow(
+						this.vendor,
+						remoteJid,
+						m.messages[0]
+					);
 					functionsFlow.addDataUser(flowCurrent9);
 					functionsFlow.addFlow(flow);
 					m.messages[0].message.conversation = message;
-					await LL(numberT, flow, m, functionsFlow);
+					console.log({ namesubflow: flowCurrent9.nameSubFlow });
+					await LL(numberT, flow, m, functionsFlow, flowCurrent9.nameSubFlow);
 					// console.log('1', users)
 				} else {
-					if (flow.invo == message) {
-						let sectionFunction = flowCurrent9.currentSection;
-						await this.vendor.sendMessage(remoteJid, {
-							text: flow.data[sectionFunction].word,
-						});
-						flowCurrent9.flowCurrent = flow.invo;
+					// verificar si el mensaje tiene en invo, y despues ejecutar la funcion del invo si esta definida
+					if (message.includes(flow.invo)) {
+						// guardamos en comando que se uso en el mismo usuario
 						// console.log('2', users)
+						flowCurrent9.flowCurrent = flow.invo;
+
+						m.messages[0].message.conversation = message;
+						let functionsFlow2 = new FunctionsFlow(
+							this.vendor,
+							remoteJid,
+							m.messages[0]
+						);
+						let nameSubFlow = await LL2(flow, m, functionsFlow2);
+						console.log(nameSubFlow);
+						let newSubFlow = flow.subFlows[nameSubFlow];
+
+						let sectionFunction = flowCurrent9.currentSection;
+						console.log(newSubFlow);
+						console.log({ sectionFunction });
+						// console.log(newSubFlow[sectionFunction].word);
+						if (newSubFlow[sectionFunction].word) {
+							await this.vendor.sendMessage(remoteJid, {
+								text: newSubFlow[sectionFunction].word,
+							});
+						} else {
+							let functionsFlow = new FunctionsFlow(
+								this.vendor,
+								remoteJid,
+								m.messages[0]
+							);
+							functionsFlow.addDataUser(flowCurrent9);
+							functionsFlow.addFlow(flow);
+							functionsFlow.addSubFlow(newSubFlow);
+							await LL(numberT, newSubFlow, m, functionsFlow, nameSubFlow);
+						}
 					}
 				}
 			});
@@ -94,22 +149,52 @@ class Connectbaileys {
 	}
 }
 
-const LL = async (numberT, flow, m, functionsFlow) => {
+const LL = async (numberT, newSubFlow, m, functionsFlow, nameSubFlow) => {
 	let sectionFunction = getCurrent(numberT).currentSection;
 
-	await flow.data[sectionFunction].execfunction({
+	await newSubFlow[sectionFunction].action({
 		ctx: m,
-		sendMessage: (text) => functionsFlow.sendMessage(text),
-		sendFile: (file) => functionsFlow.sendFile(file),
-		endFlow: (text) => functionsFlow.endFlow(text),
+		sendMessage: (...args) => functionsFlow.sendMessage(...args),
+		sendFile: (...args) => functionsFlow.sendFile(...args),
+		endFlow: (...args) => functionsFlow.endFlow(...args),
 		fallBack: () => functionsFlow.fallBack(),
+
+		deleteMessage: (...args) => functionsFlow.deleteMessage(...args),
+		updateMessage: (...args) => functionsFlow.updateMessage(...args),
+		sendSticker: (...args) => functionsFlow.sendSticker(...args),
 	});
 	if (!functionsFlow.statusFallBack) {
-		if (sectionFunction + 1 < flow.data.length) {
-			await functionsFlow.sendMessage(flow.data[sectionFunction + 1].word);
+		if (sectionFunction + 1 < newSubFlow.length) {
+			if (newSubFlow[sectionFunction + 1].word) {
+				await functionsFlow.sendMessage({
+					text: newSubFlow[sectionFunction + 1].word,
+				});
+				saveCurretSection(numberT, nameSubFlow, newSubFlow.length);
+			} else {
+				saveCurretSection(numberT, nameSubFlow, newSubFlow.length);
+				await LL(numberT, newSubFlow, m, functionsFlow, nameSubFlow);
+			}
+
+			// await functionsFlow.sendMessage(newSubFlow[sectionFunction + 1].word);
+		} else {
+			saveCurretSection(numberT, nameSubFlow, newSubFlow.length);
+			// await functionsFlow.endFlow('Fin del flujo');
 		}
-		saveCurretSection(numberT, flow.data.length);
 	}
+};
+
+const LL2 = async (flow, m, functionsFlow) => {
+	if (!flow.onImmediateExecute) return;
+	await flow.onImmediateExecute({
+		ctx: m,
+		sendMessage: (...args) => functionsFlow.sendMessage(...args),
+		sendFile: (...args) => functionsFlow.sendFile(...args),
+		endFlow: (...args) => functionsFlow.endFlow(...args),
+		fallBack: () => functionsFlow.fallBack(),
+		redirectToSubflow: (subFlow) => functionsFlow.redirectToSubflow(subFlow),
+	});
+
+	return functionsFlow.nameSubFlow;
 };
 
 module.exports = { Connectbaileys };

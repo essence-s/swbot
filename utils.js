@@ -2,6 +2,14 @@ const { exec } = require('child_process');
 const fs = require('fs');
 const youtubesearchapi = require('youtube-search-api');
 const ytdl = require('@distube/ytdl-core');
+const path = require('path');
+const os = require('os');
+
+const isWindows = os.platform() === 'win32';
+
+const ytdlpPath = isWindows
+	? path.join(__dirname, 'bin', 'win', 'yt-dlp.exe')
+	: path.join(__dirname, 'bin', 'linux', 'yt-dlp');
 
 const getDataSearch = async (search, maxResults) => {
 	const responseF = await youtubesearchapi.GetListByKeyword(
@@ -11,16 +19,33 @@ const getDataSearch = async (search, maxResults) => {
 		[{ type: 'video' }]
 	);
 
-	return responseF;
+	responseFilterTypeVideo = responseF.items.filter(
+		(item) => item.type === 'video'
+	);
+	// console.dir(
+	// 	{
+	// 		response: responseF,
+	// 		da: responseF.items[0].shortBylineText,
+	// 		length: responseF.items[0].length,
+	// 	},
+	// 	{ depth: null }
+	// );
+	// console.log(responseF.items[0].shortBylineText);
+	// console.log(responseF.items[0].length);
+	// const details = await youtubesearchapi.GetVideoDetails('3AtDnEC4zak');
+	// console.log(details);
+
+	return { items: responseFilterTypeVideo };
 };
 
 const parseSearchData = (arrayfromSearch) => {
+	console.dir(arrayfromSearch, { depth: null });
 	return arrayfromSearch.map((d) => {
 		let {
-			id,
-			title,
-			thumbnail: { thumbnails },
-			length: { simpleText },
+			id = 'no-id',
+			title = 'Sin título',
+			thumbnail: { thumbnails = [{ url: '' }] } = {},
+			length: { simpleText = 'Sin duración' } = {},
 		} = d;
 		return {
 			videoId: `https://www.youtube.com/watch?v=${id}`,
@@ -201,9 +226,84 @@ async function getVideoInfo(videoURL) {
 	}
 }
 
+async function getVideoInfo2(url) {
+	const yt_dlp = 'D:/descargasd/yt-dlp.exe';
+
+	return new Promise((resolve, reject) => {
+		exec(`${yt_dlp} -j "${url}"`, (error, stdout, stderr) => {
+			if (error) {
+				console.error(`Error ejecutando yt-dlp: ${error.message}`);
+				return;
+			}
+			if (stderr) {
+				console.error(`stderr: ${stderr}`);
+			}
+
+			try {
+				const data = JSON.parse(stdout);
+				console.log('✅ JSON cargado:');
+				console.log(data.formats.map((f) => f.format_id));
+
+				const formats = data.formats;
+
+				// Filtrado de videos y audios fusionables (mismo ext, sin conversión)
+				const videoOnly = formats.filter(
+					(f) => f.vcodec !== 'none' && f.acodec === 'none' && f.ext === 'mp4'
+				);
+
+				const audioOnly = formats.filter(
+					(f) => f.acodec !== 'none' && f.vcodec == 'none' && f.ext === 'mp4'
+				);
+
+				console.log(audioOnly);
+
+				// Agrupar videos por altura (resolución) única
+				const videosByResolution = {};
+				videoOnly.forEach((v) => {
+					const key = v.height;
+					if (!videosByResolution[key]) {
+						videosByResolution[key] = v;
+					}
+				});
+
+				// solo audio compatible para todos
+				const bestAudio = audioOnly.sort((a, b) => {
+					const order = ['low', 'medium', 'high'];
+					const getPriority = (note = '') =>
+						order.findIndex((p) => note.toLowerCase().includes(p));
+					return getPriority(b.format_note) - getPriority(a.format_note);
+				})[0];
+
+				console.log('El mejor audio sin abr es:', bestAudio.format_id);
+
+				// pares fusionables por resolución
+				const fusionPairs = Object.values(videosByResolution).map(
+					(video, i) => {
+						return {
+							index: i,
+							format_id: video.format_id,
+							audio: bestAudio.format_id,
+							resolution: video.height,
+							ext: video.ext,
+							url,
+						};
+					}
+				);
+
+				console.log(fusionPairs);
+
+				resolve(fusionPairs);
+			} catch (parseError) {
+				console.error('❌ Error al parsear JSON:', parseError);
+				reject(parseError);
+			}
+		});
+	});
+}
+
 let dataInfoMesague = (array) => {
 	let datamesague = array.reduce((ant, format, i) => {
-		return `${ant} ${i + 1} : ${format.qualityLabel} ${format.container} \n`;
+		return `${ant} ${i + 1} : ${format.resolution} ${format.ext} \n`;
 	}, '');
 
 	return datamesague;
@@ -230,6 +330,79 @@ const downloadG = async (url, index, name) => {
 			});
 	});
 };
+
+const downloadVideo = async ({
+	url,
+	resolution = null,
+	audioOnly = false,
+	allowLowerQuality = false,
+}) => {
+	const yt_dlp_path = ytdlpPath;
+	const randomName = generateRandomName();
+	const outputTemplate = `%(title).80s__${randomName}.%(ext)s`;
+	const finalExtension = audioOnly ? 'mp3' : 'mp4';
+
+	const baseArgs = audioOnly
+		? '--extract-audio --audio-format mp3'
+		: '--merge-output-format mp4';
+
+	const resolutionSelector = allowLowerQuality
+		? `height<=${resolution}`
+		: `height=${resolution}`;
+
+	const formatSelector = audioOnly
+		? 'ba[ext=m4a]/bestaudio'
+		: `bv*[ext=mp4][${resolutionSelector}]+ba[ext=m4a]`;
+
+	// comando base
+	const command = `${yt_dlp_path} --no-playlist -f "${formatSelector}" -o "${outputTemplate}" ${baseArgs} "${url}"`;
+
+	console.log('⏬ Ejecutando comando:', command);
+
+	return new Promise((resolve, reject) => {
+		exec(command, (error, stdout, stderr) => {
+			const notAvailableMsg = 'Requested format is not available';
+			if (error && error.message.includes(notAvailableMsg)) {
+				console.warn(
+					`⚠️ No se encontró resolución exacta (${resolution}p). Usando calidad menor o igual disponible...`
+				);
+
+				return reject('noResolutionAvailable');
+			}
+			if (error) {
+				console.error(`Error ejecutando yt-dlp: ${error.message}`);
+				return reject(error);
+			}
+			if (stderr) {
+				console.error(`stderr: ${stderr}`);
+			}
+
+			const finalPath = findGeneratedFile(randomName, finalExtension);
+
+			if (!finalPath) {
+				return reject(
+					new Error('❌ Archivo no encontrado después de la descarga')
+				);
+			}
+
+			console.log(`✅ Archivo guardado como: ${finalPath}`);
+			resolve(finalPath);
+		});
+	});
+};
+
+function findGeneratedFile(randomName, ext) {
+	const files = fs.readdirSync(process.cwd());
+	const match = files.find(
+		(file) =>
+			file.includes(randomName) && file.toLowerCase().endsWith(`.${ext}`)
+	);
+	return match ? path.resolve(match) : null;
+}
+
+function sanitizeFilename(name) {
+	return name.replace(/[\\/:*?"<>|]/g, '').trim();
+}
 
 const joinVideoAndAudio = (videoPath, audioPath, ouputName) => {
 	return new Promise((resolve) => {
@@ -318,7 +491,9 @@ module.exports = {
 	evalu2,
 	dataInfoMesague,
 	getVideoInfo,
+	getVideoInfo2,
 	downloadG,
+	downloadVideo,
 	joinVideoAndAudio,
 	totalFileSize,
 	checkTotalFileSize,

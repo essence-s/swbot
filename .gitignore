@@ -17,5 +17,8 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
-.env*.local
+.env*.
 
+# binarios
+/bin/win/*
+/bin/linux/*
