@@ -22,3 +22,6 @@ yarn-error.log*
 # binarios
 /bin/win/*
 /bin/linux/*
+
+!bin/win/
+!bin/linux/
