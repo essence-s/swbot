@@ -23,5 +23,7 @@ yarn-error.log*
 /bin/win/*
 /bin/linux/*
 
-!bin/win/
-!bin/linux/
+# !bin/win/
+# !bin/linux/
+!bin/win/.gitkeep
+!bin/linux/.gitkeep
