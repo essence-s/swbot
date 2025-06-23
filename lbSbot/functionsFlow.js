@@ -2,6 +2,7 @@ const mime = require('mime-types');
 const fs = require('fs');
 const { Readable } = require('stream');
 const path = require('path');
+const { url } = require('inspector');
 // const toAsyncIterator = require('stream-to-async-iterator');
 
 class FunctionsFlow {
@@ -46,23 +47,64 @@ class FunctionsFlow {
 		return await this.sock.sendMessage(this.remoteJid, { text, edit: key });
 	}
 
-	async sendFile({ filePath, fileName, options = { reply: false } }) {
+	async sendFile({
+		filePath = { url: '' },
+		fileName,
+		options = { reply: false, type: 'document', caption: '' },
+	}) {
 		const finalOptions = {};
 		if (options.reply) finalOptions.quoted = this.msg;
 
-		const mimeType = mime.lookup(filePath);
-		const newFileName = fileName || path.basename(filePath) || 'file';
-		console.log({ newFileName, fileName });
-		const buffer = fs.readFileSync(filePath);
-		await this.sock.sendMessage(
-			this.remoteJid,
-			{
-				document: buffer,
+		if (!filePath) {
+			throw new Error('filePath es obligatorio');
+		}
+
+		let fileSource;
+		let mimeType;
+		let newFileName;
+
+		const isUrl = typeof filePath === 'object' && filePath.url;
+
+		if (isUrl) {
+			fileSource = { url: filePath.url };
+			mimeType = mime.lookup(filePath.url) || 'application/octet-stream';
+			newFileName = fileName || path.basename(filePath.url) || 'file';
+		} else if (typeof filePath === 'string') {
+			fileSource = fs.readFileSync(filePath);
+			mimeType = mime.lookup(filePath) || 'application/octet-stream';
+			newFileName = fileName || path.basename(filePath) || 'file';
+		} else {
+			throw new Error(
+				'filePath debe ser una string o un objeto con propiedad "url"'
+			);
+		}
+
+		const type = options.type || 'document';
+		let messageContent = {};
+
+		if (type === 'image') {
+			messageContent = {
+				image: fileSource,
+				caption: options.caption || '',
 				mimetype: mimeType,
 				fileName: newFileName,
-			},
-			finalOptions
-		);
+			};
+		} else if (type === 'video') {
+			messageContent = {
+				video: fileSource,
+				caption: options.caption || '',
+				mimetype: mimeType,
+				fileName: newFileName,
+			};
+		} else {
+			messageContent = {
+				document: fileSource,
+				mimetype: mimeType,
+				fileName: newFileName,
+			};
+		}
+
+		await this.sock.sendMessage(this.remoteJid, messageContent, finalOptions);
 
 		////////
 		///////
