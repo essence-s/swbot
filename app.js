@@ -147,7 +147,28 @@ const YTD = {
 	},
 };
 
-const superDino = [YTD];
+const MEME = {
+	invo: '.mm',
+	description: 'envia un meme aleatorio',
+	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
+		let message = ctx.messages[0].message.conversation;
+
+		redirectToSubflow('meme');
+	},
+	defaultSubFlow: 'meme',
+	subFlows: {
+		meme: [
+			{
+				action: async ({ ctx, sendMessage, endFlow }) => {
+					let message = ctx.messages[0].message.conversation;
+					sendMessage({ text: `Enviando meme aleatorio...` });
+				},
+			},
+		],
+	},
+};
+
+const superDino = [YTD, MEME];
 // connectToWhatsApp(superDino)
 let cB = new Connectbaileys(superDino);
 cB.initBailey();
