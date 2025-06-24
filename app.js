@@ -190,7 +190,32 @@ const MEME = {
 	},
 };
 
-const superDino = [YTD, MEME];
+const INFO = {
+	invo: '.info',
+	description: 'Muestra informacion de todos los comandos',
+	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
+		let message = ctx.messages[0].message.conversation;
+
+		redirectToSubflow('info');
+	},
+	defaultSubFlow: 'info',
+	subFlows: {
+		info: [
+			{
+				action: async ({ ctx, sendMessage }) => {
+					// let message = ctx.messages[0].message.conversation;
+					sendMessage({
+						text: `Comandos disponibles:\n\n${superDino
+							.map((cmd) => `- ${cmd.invo} ${cmd.description}`)
+							.join('\n')}`,
+					});
+				},
+			},
+		],
+	},
+};
+
+const superDino = [INFO, YTD, MEME];
 // connectToWhatsApp(superDino)
 let cB = new Connectbaileys(superDino);
 cB.initBailey();
