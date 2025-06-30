@@ -9,6 +9,8 @@ const {
 	useMultiFileAuthState,
 } = require('baileys');
 
+const qrcode = require('qrcode-terminal');
+
 const { Boom } = require('@hapi/boom');
 const log = (pino = require('pino'));
 
@@ -25,13 +27,19 @@ class Connectbaileys {
 		const { state, saveCreds } = await useMultiFileAuthState('bot_sessions');
 		const sock = makeWASocket({
 			// can provide additional config here
-			printQRInTerminal: true,
+			// printQRInTerminal: true,
 			auth: state,
 			logger: log({ level: 'silent' }),
 		});
 		// sock.sendMessage('ds',{document:'',fileName,mimetype})
-		sock.ev.on('connection.update', (update) => {
-			const { connection, lastDisconnect } = update;
+		sock.ev.on('connection.update', async (update) => {
+			const { connection, lastDisconnect, qr } = update;
+
+			if (qr) {
+				console.log('qr');
+				qrcode.generate(qr, { small: true });
+			}
+
 			if (connection === 'close') {
 				const shouldReconnect =
 					new Boom(lastDisconnect.error)?.output?.statusCode !==
