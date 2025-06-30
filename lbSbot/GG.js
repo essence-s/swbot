@@ -45,13 +45,15 @@ class Connectbaileys {
 					new Boom(lastDisconnect.error)?.output?.statusCode !==
 					DisconnectReason.loggedOut;
 				// console.log('connection closed due to ', lastDisconnect.error, ', reconnecting ', shouldReconnect)
-				console.log('connection closed ,reconnecting ');
+				console.log('connection closed ,reconnecting w');
 				// reconnect if not logged out
 				if (shouldReconnect) {
-					this.initBailey();
+					setTimeout(() => {
+						this.initBailey();
+					}, 5000);
 				}
 			} else if (connection === 'open') {
-				console.log('opened connection');
+				console.log('opened connection w');
 				this.initSo(sock);
 			}
 		});
