@@ -25,6 +25,15 @@ const saveCurretSection = (number, nameSubFlow, flowLength) => {
 	// return users
 };
 
+const setNameSubFlow = (number, nameSubFlow) => {
+	let user = users[number];
+	if (user) {
+		user.nameSubFlow = nameSubFlow;
+	} else {
+		// users[number] = { currentSection: 0, flowCurrent: '', nameSubFlow: nameSubFlow };
+	}
+};
+
 const stableCurrent = (number) => {
 	let user = users[number];
 
@@ -38,4 +47,9 @@ const getCurrent = (number) => {
 	return user;
 };
 
-module.exports = { saveCurretSection, stableCurrent, getCurrent };
+module.exports = {
+	saveCurretSection,
+	stableCurrent,
+	getCurrent,
+	setNameSubFlow,
+};
