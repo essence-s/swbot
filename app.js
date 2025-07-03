@@ -32,7 +32,7 @@ const YTD = {
 		// const message = ctx.messages[0].message.conversation;
 
 		// si encuentra en el mensaje un url de yt redirige al subflujo de descarga rápida
-		const ytUrlRegex = /^\.yt\s+(https?:\/\/[^\s]+)/i;
+		const ytUrlRegex = /^\.dw\s+(https?:\/\/[^\s]+)/i;
 		const match = message.match(ytUrlRegex);
 		if (match) {
 			const data = {
