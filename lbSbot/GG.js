@@ -15,7 +15,12 @@ const { Boom } = require('@hapi/boom');
 const log = (pino = require('pino'));
 
 const { FunctionsFlow } = require('./functionsFlow.js');
-const { getCurrent, saveCurretSection, stableCurrent } = require('./users.js');
+const {
+	getCurrent,
+	saveCurretSection,
+	stableCurrent,
+	setNameSubFlow,
+} = require('./users.js');
 
 class Connectbaileys {
 	vendor;
@@ -105,6 +110,8 @@ class Connectbaileys {
 			this.dataFlows.forEach(async (flow) => {
 				// si en el flujo del usuario esta activo una invocacion
 				if (flow.invo == flowCurrent9.flowCurrent) {
+					const nameSubFlow = flowCurrent9.nameSubFlow;
+					const subFlow = flow.subFlows[nameSubFlow];
 					let functionsFlow = new FunctionsFlow(
 						this.vendor,
 						remoteJid,
@@ -112,9 +119,17 @@ class Connectbaileys {
 					);
 					functionsFlow.addDataUser(flowCurrent9);
 					functionsFlow.addFlow(flow);
+					functionsFlow.addSubFlow(subFlow);
+
 					m.messages[0].message.conversation = message;
 					console.log({ namesubflow: flowCurrent9.nameSubFlow });
-					await LL(numberT, flow, m, functionsFlow, flowCurrent9.nameSubFlow);
+					await LL(
+						numberT,
+						subFlow,
+						m,
+						functionsFlow,
+						flowCurrent9.nameSubFlow
+					);
 					// console.log('1', users)
 				} else {
 					// verificar si el mensaje tiene en invo, y despues ejecutar la funcion del invo si esta definida
@@ -141,6 +156,7 @@ class Connectbaileys {
 							await this.vendor.sendMessage(remoteJid, {
 								text: newSubFlow[sectionFunction].word,
 							});
+							setNameSubFlow(numberT, nameSubFlow);
 						} else {
 							let functionsFlow = new FunctionsFlow(
 								this.vendor,
