@@ -24,7 +24,7 @@ const {
 const { saveData, getDataUser, addSeletedVideoInfo } = require('./adp');
 
 const YTD = {
-	invo: '.yt',
+	invo: '.dw',
 	description: 'Descargar videos o audios de algunas plataformas',
 	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
 		let message = ctx.messages[0].message.conversation;
