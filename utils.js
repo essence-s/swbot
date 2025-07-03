@@ -1,4 +1,4 @@
-const { exec } = require('child_process');
+const { exec, spawn } = require('child_process');
 const fs = require('fs');
 const youtubesearchapi = require('youtube-search-api');
 const ytdl = require('@distube/ytdl-core');
@@ -336,6 +336,7 @@ const downloadVideo = async ({
 	resolution = null,
 	audioOnly = false,
 	allowLowerQuality = false,
+	onProgress = null,
 }) => {
 	const yt_dlp_path = ytdlpPath;
 	const randomName = generateRandomName();
@@ -343,8 +344,8 @@ const downloadVideo = async ({
 	const finalExtension = audioOnly ? 'mp3' : 'mp4';
 
 	const baseArgs = audioOnly
-		? '--extract-audio --audio-format mp3'
-		: '--merge-output-format mp4';
+		? ['--extract-audio', '--audio-format', 'mp3']
+		: ['--merge-output-format', 'mp4'];
 
 	const resolutionSelector = allowLowerQuality
 		? `height<=${resolution}`
@@ -354,39 +355,107 @@ const downloadVideo = async ({
 		? 'ba[ext=m4a]/bestaudio'
 		: `bv*[ext=mp4][${resolutionSelector}]+ba[ext=m4a]`;
 
-	// comando base
-	const command = `${yt_dlp_path} --no-playlist -f "${formatSelector}" -o "${outputTemplate}" ${baseArgs} "${url}"`;
+	const progress = [
+		'--newline',
+		'--progress',
+		'--progress-delta',
+		'3',
+		'--progress-template',
+		// 'download:%(progress.downloaded_bytes)s|%(progress.total_bytes)s',
+		// '%(progress._default_template)s',
+		// 'download:[%(ext)s]%(progress.downloaded_bytes)s|%(progress.total_bytes)s',
+		// 'download:%(filename)s|%(progress.downloaded_bytes)s|%(progress.total_bytes)s',
+		'download:%(info.ext)s|%(progress.downloaded_bytes)s|%(progress.total_bytes)s',
+	];
 
-	console.log('⏬ Ejecutando comando:', command);
+	// Armar array de argumentos completo
+	const args = [
+		'--no-playlist',
+		'-f',
+		formatSelector,
+		'-o',
+		outputTemplate,
+		...baseArgs,
+		...progress,
+		url,
+	];
+
+	console.log('⏬ Ejecutando comando:', args.join(' '));
 
 	return new Promise((resolve, reject) => {
-		exec(command, (error, stdout, stderr) => {
+		const dwn = spawn(yt_dlp_path, args);
+
+		dwn.stdout.on('data', (data) => {
+			const line = data.toString().trim();
+
+			// console.log(line);
+
+			const lines = data.toString().trim().split('\n');
+			for (const line of lines) {
+				const m1 = line.match(/^(\w+)\|(\d+)\|(\d+)$/);
+
+				console.log({ m1 });
+				if (!m1) continue;
+
+				const [, fileOrExt, downloadedStr, totalStr] = m1;
+				let currentType;
+				let downloaded = Number(downloadedStr);
+				let total = Number(totalStr);
+
+				currentType = fileOrExt === 'mp4' ? 'video' : 'audio';
+
+				const percent = ((downloaded / total) * 100).toFixed(1);
+
+				if (onProgress) {
+					console.log('se ejecuta onProgress');
+					console.log(Number(percent));
+					onProgress({
+						type: currentType,
+						downloaded,
+						total,
+						percent: Number(percent),
+					});
+				}
+			}
+		});
+
+		dwn.stderr.on('data', (data) => {
+			const errorMessage = data.toString().trim();
+
 			const notAvailableMsg = 'Requested format is not available';
-			if (error && error.message.includes(notAvailableMsg)) {
+			if (
+				errorMessage.startsWith('ERROR:') &&
+				errorMessage.includes(notAvailableMsg)
+			) {
 				console.warn(
 					`⚠️ No se encontró resolución exacta (${resolution}p). Usando calidad menor o igual disponible...`
 				);
 
+				console.error(`Error ejecutando yt-dlp: ${errorMessage}`);
 				return reject('noResolutionAvailable');
 			}
-			if (error) {
-				console.error(`Error ejecutando yt-dlp: ${error.message}`);
-				return reject(error);
+			if (data) {
+				console.error(`Error ejecutando yt-dlp: ${errorMessage}`);
+				return reject(data);
 			}
-			if (stderr) {
-				console.error(`stderr: ${stderr}`);
+		});
+
+		dwn.on('close', (code) => {
+			if (code === 0) {
+				console.log('✅ Descarga completada.');
+				const finalPath = findGeneratedFile(randomName, finalExtension);
+
+				if (!finalPath) {
+					return reject(
+						new Error('❌ Archivo no encontrado después de la descarga')
+					);
+				}
+
+				console.log(`✅ Archivo guardado como: ${finalPath}`);
+				resolve(finalPath);
+			} else {
+				reject(new Error(`yt-dlp finalizó con código ${code}`));
 			}
-
-			const finalPath = findGeneratedFile(randomName, finalExtension);
-
-			if (!finalPath) {
-				return reject(
-					new Error('❌ Archivo no encontrado después de la descarga')
-				);
-			}
-
-			console.log(`✅ Archivo guardado como: ${finalPath}`);
-			resolve(finalPath);
 		});
 	});
 };

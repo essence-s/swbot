@@ -25,7 +25,7 @@ const { saveData, getDataUser, addSeletedVideoInfo } = require('./adp');
 
 const YTD = {
 	invo: '.yt',
-	description: 'Descargar videos o audios de YouTube',
+	description: 'Descargar videos o audios de algunas plataformas',
 	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
 		let message = ctx.messages[0].message.conversation;
 
@@ -78,7 +78,7 @@ const YTD = {
 
 					// envio de mensaje de descarga
 					const msg = await sendMessage({
-						text: `📥 Descargando video... [▓░░░░░░░] 10%`,
+						text: `📥 Descargando video... [░░░░░░░░░░] 0%`,
 					});
 
 					// descarga y devuelve la ubicacion del video descargado
@@ -88,6 +88,26 @@ const YTD = {
 							url: urlVideo,
 							resolution: '720',
 							allowLowerQuality: false,
+							onProgress: (progress) => {
+								// console.log(progress);
+								const percent = Number(progress.percent);
+								const totalBlocks = 10;
+								const filledBlocks = Math.round((percent / 100) * totalBlocks);
+								const emptyBlocks = totalBlocks - filledBlocks;
+
+								const bar =
+									'[' +
+									'▓'.repeat(filledBlocks) +
+									'░'.repeat(emptyBlocks) +
+									']';
+
+								updateMessage({
+									text: `📥 Descargando ${
+										progress.type
+									}... ${bar} ${percent.toFixed(1)}%`,
+									key: msg.key,
+								});
+							},
 						});
 					} catch (error) {
 						console.log(error);
@@ -105,6 +125,28 @@ const YTD = {
 									url: urlVideo,
 									resolution: '720',
 									allowLowerQuality: true,
+									onProgress: (progress) => {
+										// console.log(progress);
+										const percent = Number(progress.percent);
+										const totalBlocks = 10;
+										const filledBlocks = Math.round(
+											(percent / 100) * totalBlocks
+										);
+										const emptyBlocks = totalBlocks - filledBlocks;
+
+										const bar =
+											'[' +
+											'▓'.repeat(filledBlocks) +
+											'░'.repeat(emptyBlocks) +
+											']';
+
+										updateMessage({
+											text: `📥 Descargando ${
+												progress.type
+											}... ${bar} ${percent.toFixed(1)}%`,
+											key: msg.key,
+										});
+									},
 								});
 							} catch (fallbackError) {
 								console.error('❌ Fallback también falló:', fallbackError);
@@ -126,7 +168,7 @@ const YTD = {
 
 					// actualizar mensaje para la subida del archivo
 					await updateMessage({
-						text: `⚙️ Procesando video... [▓▓▓▓▓░░░] 60%`,
+						text: `⚙️ Procesando video... [▓░░░░░░░░░] 10%`,
 						key: msg.key,
 					});
 
@@ -138,7 +180,7 @@ const YTD = {
 
 					// actualizar el mensaje de decarga y procesamiento terminada
 					await updateMessage({
-						text: `✅ Video descargado y enviado correctamente. [▓▓▓▓▓▓▓▓] 100%`,
+						text: `✅ Video descargado y enviado correctamente. [▓▓▓▓▓▓▓▓▓▓] 100%`,
 						key: msg.key,
 					});
 				},
