@@ -39,7 +39,7 @@ const getDataSearch = async (search, maxResults) => {
 };
 
 const parseSearchData = (arrayfromSearch) => {
-	console.dir(arrayfromSearch, { depth: null });
+	// console.dir(arrayfromSearch, { depth: null });
 	return arrayfromSearch.map((d) => {
 		let {
 			id = 'no-id',
@@ -241,8 +241,8 @@ async function getVideoInfo2(url) {
 
 			try {
 				const data = JSON.parse(stdout);
-				console.log('✅ JSON cargado:');
-				console.log(data.formats.map((f) => f.format_id));
+				// console.log('✅ JSON cargado:');
+				// console.log(data.formats.map((f) => f.format_id));
 
 				const formats = data.formats;
 
@@ -255,7 +255,7 @@ async function getVideoInfo2(url) {
 					(f) => f.acodec !== 'none' && f.vcodec == 'none' && f.ext === 'mp4'
 				);
 
-				console.log(audioOnly);
+				// console.log(audioOnly);
 
 				// Agrupar videos por altura (resolución) única
 				const videosByResolution = {};
@@ -274,7 +274,7 @@ async function getVideoInfo2(url) {
 					return getPriority(b.format_note) - getPriority(a.format_note);
 				})[0];
 
-				console.log('El mejor audio sin abr es:', bestAudio.format_id);
+				// console.log('El mejor audio sin abr es:', bestAudio.format_id);
 
 				// pares fusionables por resolución
 				const fusionPairs = Object.values(videosByResolution).map(
@@ -290,7 +290,7 @@ async function getVideoInfo2(url) {
 					}
 				);
 
-				console.log(fusionPairs);
+				// console.log(fusionPairs);
 
 				resolve(fusionPairs);
 			} catch (parseError) {

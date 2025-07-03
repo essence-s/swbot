@@ -257,7 +257,219 @@ const INFO = {
 	},
 };
 
-const superDino = [INFO, YTD, MEME];
+const SYT = {
+	invo: '.syt',
+	description: 'Busca y descargar videos o audios de YouTube',
+	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
+		redirectToSubflow('search');
+	},
+	defaultSubFlow: 'search',
+	subFlows: {
+		search: [
+			{
+				word: 'Escriba su búsqueda :V',
+				action: async ({ ctx, sendMessage, endFlow }) => {
+					let message = ctx.messages[0].message.conversation;
+					let pushName = ctx.messages[0].pushName;
+
+					if (message.toLowerCase() == 'exit') return endFlow('exit');
+
+					let { items } = await getDataSearch(`${message}`, 5);
+					let parsedData = parseSearchData(items);
+
+					saveData(pushName, (dataAct) => {
+						return {
+							...dataAct,
+							pushName: pushName,
+							dataSaveSearch: parsedData,
+						};
+					});
+
+					let dataFormatTextSend = messageCustomFormat(parsedData);
+					// await flowDynamic({ body: dataFormatTextSend })
+					// await sendMessage(dataFormatTextSend);
+					await sendMessage({ text: dataFormatTextSend });
+				},
+			},
+			{
+				word: 'Elija con un numero y espere...',
+				action: async ({
+					ctx,
+					sendMessage,
+					fallBack,
+					updateMessage,
+					endFlow,
+				}) => {
+					let message = ctx.messages[0].message.conversation;
+					let pushName = ctx.messages[0].pushName;
+					if (message.toLowerCase() == 'exit') return endFlow('exit');
+					let optionsObject = parseStringValues(message);
+
+					let evaluated = evalu(
+						optionsObject.option,
+						optionsObject.format,
+						optionsObject.quality
+					);
+					if (evaluated == 'noDataOption') {
+						// console.log('fallback')
+						return fallBack();
+					}
+
+					addSeletedVideoInfo(pushName, evaluated.dataOptions.option - 1);
+
+					saveData(pushName, (dataAct) => {
+						return {
+							...dataAct,
+							dataOptions: { ...evaluated.dataOptions },
+						};
+					});
+
+					let url = getDataUser(pushName).selectedVideoInfo.videoId;
+
+					if (evaluated.mode == 1) {
+						const msg = await sendMessage({
+							text: `Obteniendo informacion del video...`,
+						});
+						let datainfoQualitys = await getVideoInfo2(url);
+
+						saveData(pushName, (dataAct) => {
+							return {
+								...dataAct,
+								dataQualitys: datainfoQualitys,
+							};
+						});
+
+						// console.log(datainfoQualitys);
+						let infoMessague = dataInfoMesague(datainfoQualitys);
+
+						// console.log(infoMessague);
+						// await sendMessage(infoMessague);
+						// sendMessage({ text: infoMessague });
+						await updateMessage({
+							text: infoMessague,
+							key: msg.key,
+						});
+					} else if (evaluated.mode == 2) {
+						await fallBack();
+					}
+				},
+			},
+			{
+				word: 'Elija con un numero la calidad y con letras el formato ejemplo: \n 1 mp3 \n Si no se escoje el formato sera mp4',
+				action: async ({
+					ctx,
+					sendMessage,
+					sendFile,
+					sendSticker,
+					updateMessage,
+					endFlow,
+				}) => {
+					let message = ctx.messages[0].message.conversation;
+					let pushName = ctx.messages[0].pushName;
+					if (message.toLowerCase() == 'exit') return endFlow('exit');
+					let dataUser = getDataUser(pushName);
+					let cantVideos = dataUser.dataQualitys.length;
+					const createArrayNum = (num) => {
+						let arrayOptinosLengthVideos = [];
+						for (let i = 1; i <= num; i++) {
+							arrayOptinosLengthVideos.push(i);
+						}
+						return arrayOptinosLengthVideos;
+					};
+					let optionsObject = parseStringValues2(
+						message,
+						createArrayNum(cantVideos)
+					);
+					let urlVideo = dataUser.selectedVideoInfo.videoId;
+					let evaluado = evalu2(
+						optionsObject.format,
+						optionsObject.numOptionQuality
+					);
+					if (evaluado.format == 'mp3') {
+						// 	let ramdomName = generateRandomName();
+						// 	let indexAudio = dataUser.dataQualitys.audios[0].index;
+						// 	let audioPath = await downloadG(urlVideo, indexAudio, ramdomName);
+						// 	let totalSize = await totalFileSize([audioPath]);
+						// 	let statusCheck = checkTotalFileSize(totalSize);
+						// 	if (statusCheck == 'passedLimit') return fallBack();
+						// 	let audioMp3 = await convertMP3(audioPath, ramdomName);
+						// 	let newName = dataUser.selectedVideoInfo.title;
+						// 	let pathNewName = await renameVideo(audioMp3, `${newName}.mp3`);
+						// 	await sendFile(pathNewName);
+						// 	deleteFile([pathNewName, audioPath]);
+					} else {
+						let selectedVideo =
+							dataUser.dataQualitys[parseInt(evaluado.numOptionQuality) - 1];
+						// let pathVideo = await downloadG2(selectedVideo);
+
+						// envio de mensaje de descarga
+						const msg = await sendMessage({
+							text: `📥 Descargando video... [▓░░░░░░░] 10%`,
+						});
+
+						let pathVideo = '';
+						try {
+							pathVideo = await downloadVideo({
+								url: urlVideo,
+								resolution: '480',
+								allowLowerQuality: false,
+							});
+						} catch (error) {
+							console.log(error);
+
+							const isFormatUnavailable = error.includes(
+								'noResolutionAvailable'
+							);
+							if (isFormatUnavailable) {
+								console.warn(' Reintentando con calidad menor o igual');
+								await updateMessage({
+									text: '⚠️ Resolución exacta no disponible. Reintentando con calidad menor o igual...',
+									key: msg.key,
+								});
+
+								try {
+									pathVideo = await downloadVideo({
+										url: urlVideo,
+										resolution: '480',
+										allowLowerQuality: true,
+									});
+								} catch (fallbackError) {
+									console.error('❌ Fallback también falló:', fallbackError);
+
+									await updateMessage({
+										text: '❌ No se pudo descargar el video con ninguna calidad disponible.',
+										key: msg.key,
+									});
+									return;
+								}
+							} else {
+								await updateMessage({
+									text: '❌ Error inesperado al descargar el video.',
+									key: msg.key,
+								});
+								return endFlow({ text: 'error inesperado' });
+							}
+						}
+
+						// actualizar mensaje para la subida del archivo
+						await updateMessage({
+							text: `⚙️ Procesando video... [▓▓▓▓▓░░░] 60%`,
+							key: msg.key,
+						});
+
+						// se esta subiendo el archivo que sera la respuesta del mensaje "reply"
+						await sendFile({ filePath: pathVideo, options: { reply: true } });
+
+						// elimino el video para no ocupar espacio
+						deleteFile([pathVideo]);
+					}
+				},
+			},
+		],
+	},
+};
+
+const superDino = [INFO, YTD, MEME, SYT];
 // connectToWhatsApp(superDino)
 let cB = new Connectbaileys(superDino);
 cB.initBailey();

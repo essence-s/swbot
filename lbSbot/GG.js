@@ -149,7 +149,7 @@ class Connectbaileys {
 						let newSubFlow = flow.subFlows[nameSubFlow];
 
 						let sectionFunction = flowCurrent9.currentSection;
-						console.log(newSubFlow);
+						// console.log(newSubFlow);
 						console.log({ sectionFunction });
 						// console.log(newSubFlow[sectionFunction].word);
 						if (newSubFlow[sectionFunction].word) {
