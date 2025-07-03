@@ -227,7 +227,7 @@ async function getVideoInfo(videoURL) {
 }
 
 async function getVideoInfo2(url) {
-	const yt_dlp = 'D:/descargasd/yt-dlp.exe';
+	const yt_dlp = ytdlpPath;
 
 	return new Promise((resolve, reject) => {
 		exec(`${yt_dlp} -j "${url}"`, (error, stdout, stderr) => {
