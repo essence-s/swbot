@@ -386,17 +386,74 @@ const SYT = {
 						optionsObject.numOptionQuality
 					);
 					if (evaluado.format == 'mp3') {
-						// 	let ramdomName = generateRandomName();
-						// 	let indexAudio = dataUser.dataQualitys.audios[0].index;
-						// 	let audioPath = await downloadG(urlVideo, indexAudio, ramdomName);
-						// 	let totalSize = await totalFileSize([audioPath]);
-						// 	let statusCheck = checkTotalFileSize(totalSize);
-						// 	if (statusCheck == 'passedLimit') return fallBack();
-						// 	let audioMp3 = await convertMP3(audioPath, ramdomName);
-						// 	let newName = dataUser.selectedVideoInfo.title;
-						// 	let pathNewName = await renameVideo(audioMp3, `${newName}.mp3`);
-						// 	await sendFile(pathNewName);
-						// 	deleteFile([pathNewName, audioPath]);
+						// envio de mensaje de descarga
+						const msg = await sendMessage({
+							text: `📥 Descargando audio... [▓░░░░░░░] 10%`,
+						});
+
+						let pathVideo = '';
+						try {
+							pathVideo = await downloadVideo({
+								url: urlVideo,
+								// resolution: '480',
+								audioOnly: true,
+								allowLowerQuality: false,
+							});
+						} catch (error) {
+							console.log(error);
+
+							const isFormatUnavailable = error.includes(
+								'noResolutionAvailable'
+							);
+							if (isFormatUnavailable) {
+								console.warn(' Reintentando con calidad menor o igual');
+								await updateMessage({
+									text: '⚠️ Resolución exacta no disponible. Reintentando con calidad menor o igual...',
+									key: msg.key,
+								});
+
+								try {
+									pathVideo = await downloadVideo({
+										url: urlVideo,
+										// resolution: '480',
+										audioOnly: true,
+										allowLowerQuality: true,
+									});
+								} catch (fallbackError) {
+									console.error('❌ Fallback también falló:', fallbackError);
+
+									await updateMessage({
+										text: '❌ No se pudo descargar el video con ninguna calidad disponible.',
+										key: msg.key,
+									});
+									return;
+								}
+							} else {
+								await updateMessage({
+									text: '❌ Error inesperado al descargar el video.',
+									key: msg.key,
+								});
+								return endFlow({ text: 'error inesperado' });
+							}
+						}
+
+						// actualizar mensaje para la subida del archivo
+						await updateMessage({
+							text: `🎵 Procesando Audio... [▓▓▓▓▓░░░] 60%`,
+							key: msg.key,
+						});
+
+						// se esta subiendo el archivo que sera la respuesta del mensaje "reply"
+						await sendFile({ filePath: pathVideo, options: { reply: true } });
+
+						// elimino el video para no ocupar espacio
+						deleteFile([pathVideo]);
+
+						// actualizar el mensaje de decarga y procesamiento terminada
+						await updateMessage({
+							text: `✅ Audio descargado y enviado correctamente. [▓▓▓▓▓▓▓▓▓▓] 100%`,
+							key: msg.key,
+						});
 					} else {
 						let selectedVideo =
 							dataUser.dataQualitys[parseInt(evaluado.numOptionQuality) - 1];
@@ -462,6 +519,12 @@ const SYT = {
 
 						// elimino el video para no ocupar espacio
 						deleteFile([pathVideo]);
+
+						// actualizar el mensaje de decarga y procesamiento terminada
+						await updateMessage({
+							text: `✅ Video descargado y enviado correctamente. [▓▓▓▓▓▓▓▓▓▓] 100%`,
+							key: msg.key,
+						});
 					}
 				},
 			},
