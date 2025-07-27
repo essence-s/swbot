@@ -31,9 +31,9 @@ const YTD = {
 
 		// const message = ctx.messages[0].message.conversation;
 
-		// si encuentra en el mensaje un url de yt redirige al subflujo de descarga rápida
-		const ytUrlRegex = /^\.dw\s+(https?:\/\/[^\s]+)/i;
-		const match = message.match(ytUrlRegex);
+		// si encuentra en el mensaje un url valido de la lista de yt-dlp redirige al subflujo de descarga rápida
+		const urlRegex = /^\.dw\s+(https?:\/\/[^\s]+)/i;
+		const match = message.match(urlRegex);
 		if (match) {
 			const data = {
 				urlVideo: match[1],
