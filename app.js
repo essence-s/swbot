@@ -19,6 +19,8 @@ const {
 	deleteFile,
 	getVideoInfo2,
 	downloadVideo,
+	parseCLI,
+	downloadVideoS,
 } = require('./utils');
 
 const { saveData, getDataUser, addSeletedVideoInfo } = require('./adp');
@@ -30,21 +32,48 @@ const YTD = {
 		let message = ctx.messages[0].message.conversation;
 
 		// const message = ctx.messages[0].message.conversation;
+		const config = {
+			name: '.dw',
+			args: [{ name: 'url', required: true }],
+			flags: [
+				{ name: 'format', alias: '-mp4', type: 'boolean', value: 'mp4' },
+				{ name: 'format', alias: '-mp3', type: 'boolean', value: 'mp3' },
+				// { name: 'output', alias: '-o', type: 'string' },
 
-		// si encuentra en el mensaje un url valido de la lista de yt-dlp redirige al subflujo de descarga rápida
-		const urlRegex = /^\.dw\s+(https?:\/\/[^\s]+)/i;
-		const match = message.match(urlRegex);
-		if (match) {
-			const data = {
-				urlVideo: match[1],
-			};
-			ctx.data = data;
-			console.log(match[1]);
-			redirectToSubflow('fastDownload');
+				// Resoluciones como flags individuales pero apuntando a la misma key
+				{ name: 'resolution', alias: '-890', type: 'boolean', value: 890 },
+				{ name: 'resolution', alias: '-720', type: 'boolean', value: 720 },
+				{ name: 'resolution', alias: '-420', type: 'boolean', value: 420 },
+				{ name: 'resolution', alias: '-360', type: 'boolean', value: 360 },
+			],
+		};
 
-			// redireccion
-		} else if (message.includes('dino')) {
-			redirectToSubflow('search');
+		try {
+			const parsed = parseCLI(message, config);
+			// const result = {
+			// 	command: '.dw',
+			// 	args: { url: 'https://youtube.com' },
+			// 	options: { format: 'mp4', resolution: 360 },
+			// };
+
+			// si encuentra en el mensaje un url valido de la lista de yt-dlp redirige al subflujo de descarga rápida
+			const urlRegex = /https?:\/\/[^\s/$.?#].[^\s]*/gi;
+			const match = parsed?.args?.url?.match(urlRegex);
+			if (match) {
+				const data = {
+					// urlVideo: match[0],
+					parsed,
+				};
+				ctx.data = data;
+				console.log(match[0]);
+				redirectToSubflow('fastDownload');
+
+				// redireccion
+			} else if (message.includes('dino')) {
+				redirectToSubflow('search');
+			}
+		} catch (err) {
+			console.error('Error:', err.message);
 		}
 	},
 	defaultSubFlow: 'search',
@@ -68,7 +97,8 @@ const YTD = {
 					endFlow,
 				}) => {
 					let message = ctx.messages[0].message.conversation;
-					let { urlVideo } = ctx.data;
+					let urlVideo = ctx.data.parsed.args.url;
+					let flagsOptions = ctx.data.parsed.options;
 
 					// envio de sticker de descargando
 					await sendSticker({
@@ -83,11 +113,99 @@ const YTD = {
 
 					// descarga y devuelve la ubicacion del video descargado
 					let pathVideo = '';
+					const resolution = flagsOptions.resolution || '720'; // por defecto 720
+					const audioOnly = flagsOptions.format === 'mp3'; // si el formato es mp3, solo descarga el audio
+					// try {
+					// 	pathVideo = await downloadVideoS({
+					// 		url: urlVideo,
+					// 		resolution,
+					// 		audioOnly,
+					// 		allowLowerQuality: true,
+					// 		onProgress: (progress) => {
+					// 			// console.log(progress);
+					// 			const percent = Number(progress.percent);
+					// 			const totalBlocks = 10;
+					// 			const filledBlocks = Math.round((percent / 100) * totalBlocks);
+					// 			const emptyBlocks = totalBlocks - filledBlocks;
+
+					// 			const bar =
+					// 				'[' +
+					// 				'▓'.repeat(filledBlocks) +
+					// 				'░'.repeat(emptyBlocks) +
+					// 				']';
+
+					// 			updateMessage({
+					// 				text: `📥 Descargando ${
+					// 					progress.type
+					// 				}... ${bar} ${percent.toFixed(1)}%`,
+					// 				key: msg.key,
+					// 			});
+					// 		},
+					// 	});
+					// } catch (error) {
+					// 	console.log(error);
+
+					// 	const isFormatUnavailable = error.includes('noResolutionAvailable');
+					// 	if (isFormatUnavailable) {
+					// 		console.warn(' Reintentando con calidad menor o igual');
+					// 		await updateMessage({
+					// 			text: '⚠️ Resolución exacta no disponible. Reintentando con calidad menor o igual...',
+					// 			key: msg.key,
+					// 		});
+
+					// 		try {
+					// 			pathVideo = await downloadVideo({
+					// 				url: urlVideo,
+					// 				resolution,
+					// 				audioOnly,
+					// 				allowLowerQuality: true,
+					// 				onProgress: (progress) => {
+					// 					// console.log(progress);
+					// 					const percent = Number(progress.percent);
+					// 					const totalBlocks = 10;
+					// 					const filledBlocks = Math.round(
+					// 						(percent / 100) * totalBlocks
+					// 					);
+					// 					const emptyBlocks = totalBlocks - filledBlocks;
+
+					// 					const bar =
+					// 						'[' +
+					// 						'▓'.repeat(filledBlocks) +
+					// 						'░'.repeat(emptyBlocks) +
+					// 						']';
+
+					// 					updateMessage({
+					// 						text: `📥 Descargando ${
+					// 							progress.type
+					// 						}... ${bar} ${percent.toFixed(1)}%`,
+					// 						key: msg.key,
+					// 					});
+					// 				},
+					// 			});
+					// 		} catch (fallbackError) {
+					// 			console.error('❌ Fallback también falló:', fallbackError);
+
+					// 			await updateMessage({
+					// 				text: '❌ No se pudo descargar el video con ninguna calidad disponible.',
+					// 				key: msg.key,
+					// 			});
+					// 			return;
+					// 		}
+					// 	} else {
+					// 		await updateMessage({
+					// 			text: '❌ Error inesperado al descargar el video.',
+					// 			key: msg.key,
+					// 		});
+					// 		return endFlow({ text: 'error inesperado' });
+					// 	}
+					// }
+
 					try {
-						pathVideo = await downloadVideo({
+						pathVideo = await downloadVideoS({
 							url: urlVideo,
-							resolution: '720',
-							allowLowerQuality: false,
+							resolution,
+							audioOnly,
+							allowLowerQuality: true,
 							onProgress: (progress) => {
 								// console.log(progress);
 								const percent = Number(progress.percent);
@@ -108,62 +226,18 @@ const YTD = {
 									key: msg.key,
 								});
 							},
+							onWarning: ({ text }) => {
+								console.warn('⚠️ Warning:', text);
+								updateMessage({
+									text,
+									key: msg.key,
+								});
+							},
 						});
 					} catch (error) {
 						console.log(error);
 
-						const isFormatUnavailable = error.includes('noResolutionAvailable');
-						if (isFormatUnavailable) {
-							console.warn(' Reintentando con calidad menor o igual');
-							await updateMessage({
-								text: '⚠️ Resolución exacta no disponible. Reintentando con calidad menor o igual...',
-								key: msg.key,
-							});
-
-							try {
-								pathVideo = await downloadVideo({
-									url: urlVideo,
-									resolution: '720',
-									allowLowerQuality: true,
-									onProgress: (progress) => {
-										// console.log(progress);
-										const percent = Number(progress.percent);
-										const totalBlocks = 10;
-										const filledBlocks = Math.round(
-											(percent / 100) * totalBlocks
-										);
-										const emptyBlocks = totalBlocks - filledBlocks;
-
-										const bar =
-											'[' +
-											'▓'.repeat(filledBlocks) +
-											'░'.repeat(emptyBlocks) +
-											']';
-
-										updateMessage({
-											text: `📥 Descargando ${
-												progress.type
-											}... ${bar} ${percent.toFixed(1)}%`,
-											key: msg.key,
-										});
-									},
-								});
-							} catch (fallbackError) {
-								console.error('❌ Fallback también falló:', fallbackError);
-
-								await updateMessage({
-									text: '❌ No se pudo descargar el video con ninguna calidad disponible.',
-									key: msg.key,
-								});
-								return;
-							}
-						} else {
-							await updateMessage({
-								text: '❌ Error inesperado al descargar el video.',
-								key: msg.key,
-							});
-							return endFlow({ text: 'error inesperado' });
-						}
+						return endFlow({ text: 'error inesperado' });
 					}
 
 					// actualizar mensaje para la subida del archivo

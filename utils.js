@@ -337,6 +337,7 @@ const downloadVideo = async ({
 	audioOnly = false,
 	allowLowerQuality = false,
 	onProgress = null,
+	onWarning = null,
 }) => {
 	const yt_dlp_path = ytdlpPath;
 	const randomName = generateRandomName();
@@ -419,23 +420,8 @@ const downloadVideo = async ({
 			}
 		});
 
-		dwn.stderr.on('data', (data) => {
-			const errorMessage = data.toString().trim();
-
-			const notAvailableMsg = 'Requested format is not available';
-			if (
-				errorMessage.startsWith('ERROR:') &&
-				errorMessage.includes(notAvailableMsg)
-			) {
-				console.warn(
-					`⚠️ No se encontró resolución exacta (${resolution}p). Usando calidad menor o igual disponible...`
-				);
-
-				console.error(`Error ejecutando yt-dlp: ${errorMessage}`);
-				return reject('noResolutionAvailable');
-			}
+		dwn.stderr.on('data', async (data) => {
 			if (data) {
-				console.error(`Error ejecutando yt-dlp: ${errorMessage}`);
 				return reject(data);
 			}
 		});
@@ -549,6 +535,76 @@ const deleteFile = (arrayFiles) => {
 	});
 };
 
+const downloadVideoS = async ({
+	url,
+	resolution,
+	audioOnly,
+	allowLowerQuality,
+	onProgress,
+	onWarning,
+}) => {
+	let pathVideo = '';
+	try {
+		pathVideo = await downloadVideo({
+			url,
+			resolution,
+			audioOnly,
+			allowLowerQuality: false,
+			onProgress,
+		});
+	} catch (error) {
+		console.log(error);
+
+		const errorMessage = error.toString().trim();
+
+		const notAvailableMsg = 'Requested format is not available';
+		const isFormatAvailable = !errorMessage.includes(notAvailableMsg);
+		if (errorMessage.startsWith('ERROR:') && !isFormatAvailable) {
+			// console.warn(
+			// 	`⚠️ No se encontró resolución exacta (${resolution}p). Usando calidad menor o igual disponible...`
+			// );
+
+			console.error(`Error ejecutando yt-dlp: ${errorMessage}`);
+			// return reject('noResolutionAvailable');
+
+			if (!allowLowerQuality) {
+				throw new Error('⚠️ Resolución exacta no disponible');
+			}
+
+			console.warn(' Reintentando con calidad menor o igual');
+
+			if (onWarning) {
+				console.log('se ejecuta onWarning');
+				await onWarning({
+					text: '⚠️ Resolución exacta no disponible. Reintentando con calidad menor o igual...',
+				});
+			}
+
+			try {
+				pathVideo = await downloadVideo({
+					url,
+					resolution,
+					audioOnly,
+					allowLowerQuality,
+					onProgress,
+					onWarning,
+				});
+			} catch (fallbackError) {
+				console.error('❌ Fallback también falló:', fallbackError);
+
+				throw new Error(
+					'❌ No se pudo descargar el video con ninguna calidad disponible.'
+				);
+			}
+		} else {
+			console.error(`Error ejecutando yt-dlp: ${errorMessage}`);
+			throw new Error('❌ Error inesperado');
+		}
+	}
+
+	return pathVideo;
+};
+
 // Tokenizar input
 function tokenize(input) {
 	return (
@@ -657,6 +713,7 @@ module.exports = {
 	getVideoInfo2,
 	downloadG,
 	downloadVideo,
+	downloadVideoS,
 	joinVideoAndAudio,
 	totalFileSize,
 	checkTotalFileSize,
