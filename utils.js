@@ -549,6 +549,100 @@ const deleteFile = (arrayFiles) => {
 	});
 };
 
+// Tokenizar input
+function tokenize(input) {
+	return (
+		input
+			.match(/"[^"]*"|\S+/g)
+			?.map((token) => token.replace(/^"(.+)"$/, '$1')) || []
+	);
+}
+
+// Detectar comando,argumentos y flags
+function parseCLI(input, config) {
+	// Tokenizamos
+	const tokens = tokenize(input.trim());
+
+	if (!tokens.length) {
+		throw new Error('No se proporcionó ningún comando.');
+	}
+
+	// Extraer nombre del comando
+	const commandName = tokens[0];
+	// console.log('Comando detectado:', commandName);
+	if (commandName !== config.name) {
+		throw new Error(
+			`Se esperaba el comando "${config.name}", pero se recibió "${commandName}".`
+		);
+	}
+
+	// Resultado inicial
+	const result = { command: commandName, args: {}, options: {} };
+
+	// Procesar argumentos posicionales
+	// Empezamos en 1 porque el índice 0 es el comando
+	let i = 1;
+	for (const argDef of config.args || []) {
+		const next = tokens[i];
+		// console.log(`Revisando posicional "${argDef.name}" en token[${i}]:`, next);
+
+		if (!next || next.startsWith('-')) {
+			if (argDef.required) {
+				throw new Error(`Falta el argumento obligatorio: ${argDef.name}`);
+			} else {
+				// console.log(`→ "${argDef.name}" es opcional y no estaba.`);
+				continue;
+			}
+		}
+
+		result.args[argDef.name] = next;
+		// console.log(`→ Asignado args.${argDef.name} = "${next}"`);
+		i++;
+	}
+
+	// Proceso de flags
+	for (; i < tokens.length; i++) {
+		const token = tokens[i];
+		// console.log(`Procesando flag/token[${i}]:`, token);
+
+		// Buscar definición de flag
+		const flagDef = (config.flags || []).find(
+			(f) => f.alias === token || f.name === token
+		);
+		if (!flagDef) {
+			throw new Error(`Opción desconocida: ${token}`);
+		}
+		// console.log('→ Flag reconocida:', flagDef);
+
+		// Value implícito
+		if (flagDef.value !== undefined) {
+			result.options[flagDef.name] = flagDef.value;
+			// console.log(`→ options.${flagDef.name} = ${flagDef.value} (value implícito)`);
+			continue;
+		}
+
+		// Boolean
+		if (flagDef.type === 'boolean') {
+			result.options[flagDef.name] = true;
+			// console.log(`→ options.${flagDef.name} = true (boolean flag)`);
+			continue;
+		}
+
+		// String o Number → consumir siguiente token
+		const raw = tokens[++i];
+		// console.log(`→ Leyendo valor para "${flagDef.alias}" desde token[${i}]:`, raw);
+		if (!raw || raw.startsWith('-')) {
+			throw new Error(`La opción ${flagDef.alias} requiere un valor.`);
+		}
+		const parsedValue = flagDef.type === 'number' ? Number(raw) : raw;
+		result.options[flagDef.name] = parsedValue;
+		// console.log(`→ options.${flagDef.name} = ${parsedValue}`);
+	}
+
+	// console.log('Resultado final:', result);
+	return result;
+}
+
 module.exports = {
 	getDataSearch,
 	parseSearchData,
@@ -569,4 +663,5 @@ module.exports = {
 	renameVideo,
 	generateRandomName,
 	deleteFile,
+	parseCLI,
 };
