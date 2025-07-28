@@ -455,49 +455,49 @@ const SYT = {
 						});
 
 						let pathVideo = '';
+						const resolution = '480'; // por defecto 720
+						// const audioOnly = flagsOptions.format === 'mp3'; // si el formato es mp3, solo descarga el audio
+
 						try {
-							pathVideo = await downloadVideo({
+							pathVideo = await downloadVideoS({
 								url: urlVideo,
-								resolution: '480',
-								allowLowerQuality: false,
+								resolution,
+								allowLowerQuality: true,
+								onProgress: (progress) => {
+									// console.log(progress);
+									const percent = Number(progress.percent);
+									const totalBlocks = 10;
+									const filledBlocks = Math.round(
+										(percent / 100) * totalBlocks
+									);
+									const emptyBlocks = totalBlocks - filledBlocks;
+
+									const bar =
+										'[' +
+										'▓'.repeat(filledBlocks) +
+										'░'.repeat(emptyBlocks) +
+										']';
+
+									updateMessage({
+										text: `📥 Descargando ${
+											progress.type
+										}... ${bar} ${percent.toFixed(1)}%`,
+										key: msg.key,
+									});
+								},
+								onWarning: ({ text }) => {
+									console.warn('⚠️ Warning:', text);
+									updateMessage({
+										text,
+										key: msg.key,
+									});
+								},
 							});
 						} catch (error) {
 							console.log(error);
 
-							const isFormatUnavailable = error.includes(
-								'noResolutionAvailable'
-							);
-							if (isFormatUnavailable) {
-								console.warn(' Reintentando con calidad menor o igual');
-								await updateMessage({
-									text: '⚠️ Resolución exacta no disponible. Reintentando con calidad menor o igual...',
-									key: msg.key,
-								});
-
-								try {
-									pathVideo = await downloadVideo({
-										url: urlVideo,
-										resolution: '480',
-										allowLowerQuality: true,
-									});
-								} catch (fallbackError) {
-									console.error('❌ Fallback también falló:', fallbackError);
-
-									await updateMessage({
-										text: '❌ No se pudo descargar el video con ninguna calidad disponible.',
-										key: msg.key,
-									});
-									return;
-								}
-							} else {
-								await updateMessage({
-									text: '❌ Error inesperado al descargar el video.',
-									key: msg.key,
-								});
-								return endFlow({ text: 'error inesperado' });
-							}
+							return endFlow({ text: 'error inesperado' });
 						}
-
 						// actualizar mensaje para la subida del archivo
 						await updateMessage({
 							text: `⚙️ Procesando video... [▓▓▓▓▓░░░] 60%`,
