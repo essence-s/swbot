@@ -20,6 +20,9 @@ const {
 	saveCurretSection,
 	stableCurrent,
 	setNameSubFlow,
+	startProcessing,
+	stopProcessing,
+	isProcessing,
 } = require('./users.js');
 
 class Connectbaileys {
@@ -75,6 +78,12 @@ class Connectbaileys {
 			if (m.messages[0]?.key.fromMe) return;
 
 			let remoteJid = m.messages[0].key.remoteJid;
+			let numberT = remoteJid.split('@')[0];
+
+			if (isProcessing(numberT))
+				return await this.vendor.sendMessage(remoteJid, {
+					text: 'Ya hay algo en proceso, espere un momento',
+				});
 			// let msg = m.messages[0]
 			let message;
 			let otherMe1 = m.messages[0].message?.conversation;
@@ -102,12 +111,12 @@ class Connectbaileys {
 			// console.log(m.messages[0].message);
 			// console.dir(m, { depth: null });
 
-			let numberT = remoteJid.split('@')[0];
-
 			stableCurrent(numberT);
 			let flowCurrent9 = getCurrent(numberT);
 
 			this.dataFlows.forEach(async (flow) => {
+				startProcessing(numberT);
+
 				// si en el flujo del usuario esta activo una invocacion
 				if (flow.invo == flowCurrent9.flowCurrent) {
 					const nameSubFlow = flowCurrent9.nameSubFlow;
@@ -170,6 +179,8 @@ class Connectbaileys {
 						}
 					}
 				}
+
+				stopProcessing(numberT);
 			});
 		});
 	}

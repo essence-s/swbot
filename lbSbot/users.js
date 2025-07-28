@@ -3,8 +3,22 @@ const users = {
 		flowCurrent: '',
 		currentSection: 0,
 		nameSubFlow: '',
+		isProcessing: false,
 	},
 };
+
+function isProcessing(userId) {
+	return users[userId]?.isProcessing;
+}
+
+const startProcessing = (userId) => {
+	users[userId].isProcessing = true;
+};
+
+const stopProcessing = (userId) => {
+	users[userId].isProcessing = false;
+};
+
 const saveCurretSection = (number, nameSubFlow, flowLength) => {
 	let user = users[number];
 
@@ -48,6 +62,9 @@ const getCurrent = (number) => {
 };
 
 module.exports = {
+	isProcessing,
+	startProcessing,
+	stopProcessing,
 	saveCurretSection,
 	stableCurrent,
 	getCurrent,
