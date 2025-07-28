@@ -108,7 +108,7 @@ const YTD = {
 
 					// envio de mensaje de descarga
 					const msg = await sendMessage({
-						text: `📥 Descargando video... [░░░░░░░░░░] 0%`,
+						text: `📥 Descargando ... [░░░░░░░░░░] 0%`,
 					});
 
 					// descarga y devuelve la ubicacion del video descargado
@@ -378,58 +378,58 @@ const SYT = {
 					if (evaluado.format == 'mp3') {
 						// envio de mensaje de descarga
 						const msg = await sendMessage({
-							text: `📥 Descargando audio... [▓░░░░░░░] 10%`,
+							text: `📥 Descargando audio... [▓░░░░░░░░░] 10%`,
 						});
 
 						let pathVideo = '';
+
+						const audioOnly = true; //'mp3'; // si el formato es mp3, solo descarga el audio
+
 						try {
-							pathVideo = await downloadVideo({
+							pathVideo = await downloadVideoS({
 								url: urlVideo,
-								// resolution: '480',
-								audioOnly: true,
-								allowLowerQuality: false,
+								// resolution,
+								audioOnly,
+								allowLowerQuality: true,
+								onProgress: (progress) => {
+									// console.log(progress);
+									const percent = Number(progress.percent);
+									const totalBlocks = 10;
+									const filledBlocks = Math.round(
+										(percent / 100) * totalBlocks
+									);
+									const emptyBlocks = totalBlocks - filledBlocks;
+
+									const bar =
+										'[' +
+										'▓'.repeat(filledBlocks) +
+										'░'.repeat(emptyBlocks) +
+										']';
+
+									updateMessage({
+										text: `📥 Descargando ${
+											progress.type
+										}... ${bar} ${percent.toFixed(1)}%`,
+										key: msg.key,
+									});
+								},
+								onWarning: ({ text }) => {
+									console.warn('⚠️ Warning:', text);
+									updateMessage({
+										text,
+										key: msg.key,
+									});
+								},
 							});
 						} catch (error) {
 							console.log(error);
 
-							const isFormatUnavailable = error.includes(
-								'noResolutionAvailable'
-							);
-							if (isFormatUnavailable) {
-								console.warn(' Reintentando con calidad menor o igual');
-								await updateMessage({
-									text: '⚠️ Resolución exacta no disponible. Reintentando con calidad menor o igual...',
-									key: msg.key,
-								});
-
-								try {
-									pathVideo = await downloadVideo({
-										url: urlVideo,
-										// resolution: '480',
-										audioOnly: true,
-										allowLowerQuality: true,
-									});
-								} catch (fallbackError) {
-									console.error('❌ Fallback también falló:', fallbackError);
-
-									await updateMessage({
-										text: '❌ No se pudo descargar el video con ninguna calidad disponible.',
-										key: msg.key,
-									});
-									return;
-								}
-							} else {
-								await updateMessage({
-									text: '❌ Error inesperado al descargar el video.',
-									key: msg.key,
-								});
-								return endFlow({ text: 'error inesperado' });
-							}
+							return endFlow({ text: 'error inesperado' });
 						}
 
 						// actualizar mensaje para la subida del archivo
 						await updateMessage({
-							text: `🎵 Procesando Audio... [▓▓▓▓▓░░░] 60%`,
+							text: `🎵 Procesando Audio... [▓░░░░░░░░░] 10%`,
 							key: msg.key,
 						});
 
@@ -448,15 +448,14 @@ const SYT = {
 						let selectedVideo =
 							dataUser.dataQualitys[parseInt(evaluado.numOptionQuality) - 1];
 						// let pathVideo = await downloadG2(selectedVideo);
-
+						// console.log(selectedVideo);
 						// envio de mensaje de descarga
 						const msg = await sendMessage({
-							text: `📥 Descargando video... [▓░░░░░░░] 10%`,
+							text: `📥 Descargando video... [▓░░░░░░░░░] 10%`,
 						});
 
 						let pathVideo = '';
-						const resolution = '480'; // por defecto 720
-						// const audioOnly = flagsOptions.format === 'mp3'; // si el formato es mp3, solo descarga el audio
+						const resolution = selectedVideo?.resolution || '480'; // por defecto 480
 
 						try {
 							pathVideo = await downloadVideoS({
@@ -498,9 +497,10 @@ const SYT = {
 
 							return endFlow({ text: 'error inesperado' });
 						}
+
 						// actualizar mensaje para la subida del archivo
 						await updateMessage({
-							text: `⚙️ Procesando video... [▓▓▓▓▓░░░] 60%`,
+							text: `⚙️ Procesando video... [▓░░░░░░░░░] 10%`,
 							key: msg.key,
 						});
 
