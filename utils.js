@@ -48,7 +48,8 @@ const parseSearchData = (arrayfromSearch) => {
 			length: { simpleText = 'Sin duración' } = {},
 		} = d;
 		return {
-			videoId: `https://www.youtube.com/watch?v=${id}`,
+			// videoId: `https://www.youtube.com/watch?v=${id}`,
+			videoId: id,
 			title,
 			imgVideo: thumbnails[0].url,
 			duration: simpleText,
@@ -378,7 +379,8 @@ const downloadVideo = async ({
 		outputTemplate,
 		...baseArgs,
 		...progress,
-		url,
+		`https://www.youtube.com/watch?v=${url}`,
+		// url,
 	];
 
 	console.log('⏬ Ejecutando comando:', args.join(' '));
@@ -699,6 +701,48 @@ function parseCLI(input, config) {
 	return result;
 }
 
+const Innertube = require('youtubei.js').default;
+
+async function getUniqueQualities(videoID) {
+	const innertube = await Innertube.create();
+
+	// const videoID = 'dQw4w9WgXcQ';
+
+	const videoInfo = await innertube.getBasicInfo(videoID);
+
+	const formats = [
+		...(videoInfo.streaming_data.formats || []),
+		...(videoInfo.streaming_data.adaptive_formats || []),
+	];
+
+	const qualityMap = new Map();
+
+	formats.forEach((fmt) => {
+		const resolution = fmt.height;
+		if (!resolution) return; // descartar si es solo audio
+
+		if (!qualityMap.has(resolution)) {
+			qualityMap.set(resolution, {
+				// itag: fmt.itag,
+				resolution,
+				ext: fmt.mime_type,
+				// mime_type: fmt.mime_type,
+				// codec: fmt.mime_type?.split('codecs="')[1]?.replace('"', ''),
+				// has_audio: !!fmt.audio_quality || fmt.mime_type.includes('audio'),
+				// container: fmt.mime_type?.split(';')[0],
+			});
+		}
+	});
+
+	// Ordenar por resolución
+	const ordered = Array.from(qualityMap.values()).sort((a, b) => {
+		const getNum = (q) => parseInt(q.resolution);
+		return getNum(a) - getNum(b);
+	});
+
+	return ordered;
+}
+
 module.exports = {
 	getDataSearch,
 	parseSearchData,
@@ -721,4 +765,5 @@ module.exports = {
 	generateRandomName,
 	deleteFile,
 	parseCLI,
+	getUniqueQualities,
 };

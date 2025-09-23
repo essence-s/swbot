@@ -21,6 +21,7 @@ const {
 	downloadVideo,
 	parseCLI,
 	downloadVideoS,
+	getUniqueQualities,
 } = require('./utils');
 
 const { saveData, getDataUser, addSeletedVideoInfo } = require('./adp');
@@ -317,10 +318,12 @@ const SYT = {
 					let url = getDataUser(pushName).selectedVideoInfo.videoId;
 
 					if (evaluated.mode == 1) {
+						let datainfoQualitys = await getUniqueQualities(url);
+
 						const msg = await sendMessage({
 							text: `Obteniendo informacion del video...`,
 						});
-						let datainfoQualitys = await getVideoInfo2(url);
+						// let datainfoQualitys = await getVideoInfo2(url);
 
 						saveData(pushName, (dataAct) => {
 							return {
