@@ -318,11 +318,19 @@ const SYT = {
 					let url = getDataUser(pushName).selectedVideoInfo.videoId;
 
 					if (evaluated.mode == 1) {
-						let datainfoQualitys = await getUniqueQualities(url);
+						// const msg = await sendMessage({
+						// 	text: `Obteniendo informacion del video...`,
+						// });
 
-						const msg = await sendMessage({
-							text: `Obteniendo informacion del video...`,
-						});
+						// let datainfoQualitys = await getUniqueQualities(url);
+
+						const [msg, datainfoQualitys] = await Promise.all([
+							sendMessage({
+								text: `Obteniendo informacion del video...`,
+							}),
+							getUniqueQualities(url),
+						]);
+
 						// let datainfoQualitys = await getVideoInfo2(url);
 
 						saveData(pushName, (dataAct) => {
