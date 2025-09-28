@@ -717,6 +717,25 @@ async function getUniqueQualities(videoID) {
 
 	const qualityMap = new Map();
 
+	const audioFormats = formats.filter(
+		(fmt) => !fmt.height && fmt.mime_type?.includes('audio')
+	);
+
+	if (audioFormats.length > 0) {
+		// ordenar por bitrate descendente y elegir el mejor
+		const bestAudio = audioFormats.sort(
+			(a, b) => (b.bitrate || 0) - (a.bitrate || 0)
+		)[0];
+
+		qualityMap.set('audio', {
+			resolution: 'audio',
+			// ext: bestAudio.mime_type.includes('mp4') ? 'm4a' : 'webm',
+			ext: 'mp3',
+			itag: bestAudio.itag,
+			bitrate: bestAudio.bitrate,
+		});
+	}
+
 	formats.forEach((fmt) => {
 		const resolution = fmt.height;
 		if (!resolution) return; // descartar si es solo audio
@@ -725,7 +744,7 @@ async function getUniqueQualities(videoID) {
 			qualityMap.set(resolution, {
 				// itag: fmt.itag,
 				resolution,
-				ext: fmt.mime_type,
+				ext: 'mp4',
 				// mime_type: fmt.mime_type,
 				// codec: fmt.mime_type?.split('codecs="')[1]?.replace('"', ''),
 				// has_audio: !!fmt.audio_quality || fmt.mime_type.includes('audio'),
@@ -736,8 +755,9 @@ async function getUniqueQualities(videoID) {
 
 	// Ordenar por resolución
 	const ordered = Array.from(qualityMap.values()).sort((a, b) => {
-		const getNum = (q) => parseInt(q.resolution);
-		return getNum(a) - getNum(b);
+		if (a.resolution === 'audio') return -1;
+		if (b.resolution === 'audio') return 1;
+		return parseInt(a.resolution) - parseInt(b.resolution);
 	});
 
 	return ordered;
