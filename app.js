@@ -386,7 +386,11 @@ const SYT = {
 						optionsObject.format,
 						optionsObject.numOptionQuality
 					);
-					if (evaluado.format == 'mp3') {
+
+					let selectedVideo =
+						dataUser.dataQualitys[parseInt(evaluado.numOptionQuality) - 1];
+
+					if (selectedVideo?.ext == 'mp3') {
 						// envio de mensaje de descarga
 						const msg = await sendMessage({
 							text: `📥 Descargando audio... [▓░░░░░░░░░] 10%`,
@@ -456,8 +460,6 @@ const SYT = {
 							key: msg.key,
 						});
 					} else {
-						let selectedVideo =
-							dataUser.dataQualitys[parseInt(evaluado.numOptionQuality) - 1];
 						// let pathVideo = await downloadG2(selectedVideo);
 						// console.log(selectedVideo);
 						// envio de mensaje de descarga
