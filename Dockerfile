@@ -6,7 +6,7 @@ RUN apk add --no-cache ffmpeg && \
     npm install --only=production && \
     npm cache clean --force && \
     mkdir -p /app/bin/linux && \
-    wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_linux -O /app/bin/linux/yt-dlp && \
+    wget https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp_musllinux -O /app/bin/linux/yt-dlp && \
     chmod +x /app/bin/linux/yt-dlp
 COPY . .
 CMD ["npm", "start"]
