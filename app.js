@@ -356,7 +356,7 @@ const SYT = {
 				},
 			},
 			{
-				word: 'Elija con un numero la calidad y con letras el formato ejemplo: \n 1 mp3 \n Si no se escoje el formato sera mp4',
+				word: 'Elija con un numero la calidad',
 				action: async ({
 					ctx,
 					sendMessage,
