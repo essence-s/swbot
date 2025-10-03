@@ -704,63 +704,69 @@ function parseCLI(input, config) {
 const Innertube = require('youtubei.js').default;
 
 async function getUniqueQualities(videoID) {
-	const innertube = await Innertube.create();
+	try {
+		const innertube = await Innertube.create();
 
-	// const videoID = 'dQw4w9WgXcQ';
+		// const videoID = 'dQw4w9WgXcQ';
 
-	const videoInfo = await innertube.getBasicInfo(videoID);
+		const videoInfo = await innertube.getBasicInfo(videoID);
 
-	const formats = [
-		...(videoInfo.streaming_data.formats || []),
-		...(videoInfo.streaming_data.adaptive_formats || []),
-	];
+		const formats = [
+			...(videoInfo.streaming_data.formats || []),
+			...(videoInfo.streaming_data.adaptive_formats || []),
+		];
 
-	const qualityMap = new Map();
+		const qualityMap = new Map();
 
-	const audioFormats = formats.filter(
-		(fmt) => !fmt.height && fmt.mime_type?.includes('audio')
-	);
+		const audioFormats = formats.filter(
+			(fmt) => !fmt.height && fmt.mime_type?.includes('audio')
+		);
 
-	if (audioFormats.length > 0) {
-		// ordenar por bitrate descendente y elegir el mejor
-		const bestAudio = audioFormats.sort(
-			(a, b) => (b.bitrate || 0) - (a.bitrate || 0)
-		)[0];
+		if (audioFormats.length > 0) {
+			// ordenar por bitrate descendente y elegir el mejor
+			const bestAudio = audioFormats.sort(
+				(a, b) => (b.bitrate || 0) - (a.bitrate || 0)
+			)[0];
 
-		qualityMap.set('audio', {
-			resolution: 'audio',
-			// ext: bestAudio.mime_type.includes('mp4') ? 'm4a' : 'webm',
-			ext: 'mp3',
-			itag: bestAudio.itag,
-			bitrate: bestAudio.bitrate,
-		});
-	}
-
-	formats.forEach((fmt) => {
-		const resolution = fmt.height;
-		if (!resolution) return; // descartar si es solo audio
-
-		if (!qualityMap.has(resolution)) {
-			qualityMap.set(resolution, {
-				// itag: fmt.itag,
-				resolution,
-				ext: 'mp4',
-				// mime_type: fmt.mime_type,
-				// codec: fmt.mime_type?.split('codecs="')[1]?.replace('"', ''),
-				// has_audio: !!fmt.audio_quality || fmt.mime_type.includes('audio'),
-				// container: fmt.mime_type?.split(';')[0],
+			qualityMap.set('audio', {
+				resolution: 'audio',
+				// ext: bestAudio.mime_type.includes('mp4') ? 'm4a' : 'webm',
+				ext: 'mp3',
+				itag: bestAudio.itag,
+				bitrate: bestAudio.bitrate,
 			});
 		}
-	});
 
-	// Ordenar por resolución
-	const ordered = Array.from(qualityMap.values()).sort((a, b) => {
-		if (a.resolution === 'audio') return -1;
-		if (b.resolution === 'audio') return 1;
-		return parseInt(a.resolution) - parseInt(b.resolution);
-	});
+		formats.forEach((fmt) => {
+			const resolution = fmt.height;
+			if (!resolution) return; // descartar si es solo audio
 
-	return ordered;
+			if (!qualityMap.has(resolution)) {
+				qualityMap.set(resolution, {
+					// itag: fmt.itag,
+					resolution,
+					ext: 'mp4',
+					// mime_type: fmt.mime_type,
+					// codec: fmt.mime_type?.split('codecs="')[1]?.replace('"', ''),
+					// has_audio: !!fmt.audio_quality || fmt.mime_type.includes('audio'),
+					// container: fmt.mime_type?.split(';')[0],
+				});
+			}
+		});
+
+		// Ordenar por resolución
+		const ordered = Array.from(qualityMap.values()).sort((a, b) => {
+			if (a.resolution === 'audio') return -1;
+			if (b.resolution === 'audio') return 1;
+			return parseInt(a.resolution) - parseInt(b.resolution);
+		});
+
+		return ordered;
+	} catch (err) {
+		console.error('Error al obtener calidades:', err.message);
+
+		throw new Error('No se pudieron obtener las calidades');
+	}
 }
 
 module.exports = {

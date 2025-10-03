@@ -324,32 +324,40 @@ const SYT = {
 
 						// let datainfoQualitys = await getUniqueQualities(url);
 
-						const [msg, datainfoQualitys] = await Promise.all([
-							sendMessage({
-								text: `Obteniendo informacion del video...`,
-							}),
-							getUniqueQualities(url),
-						]);
-
-						// let datainfoQualitys = await getVideoInfo2(url);
-
-						saveData(pushName, (dataAct) => {
-							return {
-								...dataAct,
-								dataQualitys: datainfoQualitys,
-							};
+						const msgPromise = sendMessage({
+							text: 'Obteniendo información del video...',
 						});
 
-						// console.log(datainfoQualitys);
-						let infoMessague = dataInfoMesague(datainfoQualitys);
+						try {
+							const [msg, datainfoQualitys] = await Promise.all([
+								msgPromise,
+								getUniqueQualities(url),
+							]);
 
-						// console.log(infoMessague);
-						// await sendMessage(infoMessague);
-						// sendMessage({ text: infoMessague });
-						await updateMessage({
-							text: infoMessague,
-							key: msg.key,
-						});
+							// let datainfoQualitys = await getVideoInfo2(url);
+
+							saveData(pushName, (dataAct) => {
+								return {
+									...dataAct,
+									dataQualitys: datainfoQualitys,
+								};
+							});
+
+							// console.log(datainfoQualitys);
+							let infoMessague = dataInfoMesague(datainfoQualitys);
+
+							await updateMessage({
+								text: infoMessague,
+								key: msg.key,
+							});
+						} catch (err) {
+							const msg = await msgPromise;
+							await updateMessage({
+								text: `${err.message}\nPor favor, vuelva a intentarlo.`,
+								key: msg.key,
+							});
+							return fallBack();
+						}
 					} else if (evaluated.mode == 2) {
 						await fallBack();
 					}
