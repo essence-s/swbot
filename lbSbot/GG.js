@@ -36,6 +36,7 @@ class Connectbaileys {
 		const sock = makeWASocket({
 			// can provide additional config here
 			// printQRInTerminal: true,
+			version: [2, 3000, 1025190524],
 			auth: state,
 			logger: log({ level: 'silent' }),
 		});
