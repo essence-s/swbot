@@ -28,7 +28,22 @@ const { saveData, getDataUser, addSeletedVideoInfo } = require('./adp');
 
 const YTD = {
 	invo: '.dw',
-	description: 'Descargar videos o audios de algunas plataformas',
+	description: `
+📥 **Descargar videos o audios**
+
+Usa el comando con el enlace del video y agrega las opciones para elegir formato y calidad.
+
+🧩 *Ejemplo:*
+.dw https://www.ejemplo.com -mp3 → descarga solo el audio con la mejor calidad disponible.
+.dw https://www.ejemplo.com -720 → descarga el video en MP4 con calidad 720p.
+
+⚙️ *Opciones disponibles:*
+🎬 *-mp4* → Descargar el video
+🎵 *-mp3* → Descargar solo el audio
+📺 *-360*, *-420*, *-720*, *-890* → Elegir la calidad del video (de menor a mayor)
+
+
+`,
 	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
 		let message = ctx.messages[0].message.conversation;
 
