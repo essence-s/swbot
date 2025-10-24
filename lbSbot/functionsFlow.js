@@ -1,8 +1,8 @@
-const mime = require('mime-types');
-const fs = require('fs');
-const { Readable } = require('stream');
-const path = require('path');
-const { url } = require('inspector');
+import mime from 'mime-types';
+import fs from 'fs';
+import { Readable } from 'stream';
+import path from 'path';
+import { url } from 'inspector';
 // const toAsyncIterator = require('stream-to-async-iterator');
 
 class FunctionsFlow {
@@ -253,4 +253,4 @@ class FunctionsFlow {
 	}
 }
 
-module.exports = { FunctionsFlow };
+export { FunctionsFlow };

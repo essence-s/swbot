@@ -1,5 +1,5 @@
-const { Connectbaileys } = require('./lbSbot/GG.js');
-const {
+import { Connectbaileys } from './lbSbot/GG.js';
+import {
 	getDataSearch,
 	parseSearchData,
 	messageCustomFormat,
@@ -22,9 +22,9 @@ const {
 	parseCLI,
 	downloadVideoS,
 	getUniqueQualities,
-} = require('./utils');
+} from './utils.js';
 
-const { saveData, getDataUser, addSeletedVideoInfo } = require('./adp');
+import { saveData, getDataUser, addSeletedVideoInfo } from './adp.js';
 
 const YTD = {
 	invo: '.dw',

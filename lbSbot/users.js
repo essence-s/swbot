@@ -61,7 +61,7 @@ const getCurrent = (number) => {
 	return user;
 };
 
-module.exports = {
+export {
 	isProcessing,
 	startProcessing,
 	stopProcessing,

@@ -1,9 +1,13 @@
-const { exec, spawn } = require('child_process');
-const fs = require('fs');
-const youtubesearchapi = require('youtube-search-api');
-const ytdl = require('@distube/ytdl-core');
-const path = require('path');
-const os = require('os');
+import { exec, spawn } from 'child_process';
+import fs from 'fs';
+import youtubesearchapi from 'youtube-search-api';
+import ytdl from '@distube/ytdl-core';
+import path from 'path';
+import os from 'os';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const isWindows = os.platform() === 'win32';
 
@@ -19,7 +23,7 @@ const getDataSearch = async (search, maxResults) => {
 		[{ type: 'video' }]
 	);
 
-	responseFilterTypeVideo = responseF.items.filter(
+	const responseFilterTypeVideo = responseF.items.filter(
 		(item) => item.type === 'video'
 	);
 	// console.dir(
@@ -703,7 +707,7 @@ function parseCLI(input, config) {
 	return result;
 }
 
-const Innertube = require('youtubei.js').default;
+import Innertube from 'youtubei.js';
 
 async function getUniqueQualities(videoID) {
 	try {
@@ -771,7 +775,7 @@ async function getUniqueQualities(videoID) {
 	}
 }
 
-module.exports = {
+export {
 	getDataSearch,
 	parseSearchData,
 	messageCustomFormat,

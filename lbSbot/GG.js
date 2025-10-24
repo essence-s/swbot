@@ -3,19 +3,16 @@
 // 	DisconnectReason,
 // 	useMultiFileAuthState,
 // } = require('@whiskeysockets/baileys');
-const {
-	default: makeWASocket,
-	DisconnectReason,
-	useMultiFileAuthState,
-} = require('baileys');
+import { makeWASocket, DisconnectReason, useMultiFileAuthState } from 'baileys';
 
-const qrcode = require('qrcode-terminal');
+import qrcode from 'qrcode-terminal';
 
-const { Boom } = require('@hapi/boom');
-const log = (pino = require('pino'));
+import { Boom } from '@hapi/boom';
+import pino from 'pino';
+const log = pino;
 
-const { FunctionsFlow } = require('./functionsFlow.js');
-const {
+import { FunctionsFlow } from './functionsFlow.js';
+import {
 	getCurrent,
 	saveCurretSection,
 	stableCurrent,
@@ -23,7 +20,7 @@ const {
 	startProcessing,
 	stopProcessing,
 	isProcessing,
-} = require('./users.js');
+} from './users.js';
 
 class Connectbaileys {
 	vendor;
@@ -235,4 +232,4 @@ const LL2 = async (flow, m, functionsFlow) => {
 	return functionsFlow.nameSubFlow;
 };
 
-module.exports = { Connectbaileys };
+export { Connectbaileys };

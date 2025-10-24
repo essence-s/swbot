@@ -43,44 +43,47 @@ let dataSaveArray = [];
 // ]
 
 const saveData = (identif, dataFuction) => {
-    let indice = dataSaveArray.findIndex(d => d.pushName == identif)
-    if (indice !== -1) {
-        dataSaveArray[indice] = dataFuction(dataSaveArray[indice])
-    } else {
-        dataSaveArray.push(dataFuction({}))
-    }
-
-}
+	let indice = dataSaveArray.findIndex((d) => d.pushName == identif);
+	if (indice !== -1) {
+		dataSaveArray[indice] = dataFuction(dataSaveArray[indice]);
+	} else {
+		dataSaveArray.push(dataFuction({}));
+	}
+};
 const converNumberToURL = (idName, dataOptions) => {
-    let url = dataSaveArray.find((d) => d.pushName == idName)?.dataSaveSearch[dataOptions.option - 1]?.videoId
-    return url
-}
+	let url = dataSaveArray.find((d) => d.pushName == idName)?.dataSaveSearch[
+		dataOptions.option - 1
+	]?.videoId;
+	return url;
+};
 const addSeletedVideoInfo = (idName, index) => {
-    let element = dataSaveArray.find((d) => d.pushName == idName)
-    let elementSelected = element?.dataSaveSearch[index]
-    element.selectedVideoInfo = elementSelected
-}
+	let element = dataSaveArray.find((d) => d.pushName == idName);
+	let elementSelected = element?.dataSaveSearch[index];
+	element.selectedVideoInfo = elementSelected;
+};
 const dataToAdd = (idName, dataOptions) => {
-    let element = dataSaveArray.find((d) => d.pushName == idName)
-    element.dataOptions = dataOptions
-}
+	let element = dataSaveArray.find((d) => d.pushName == idName);
+	element.dataOptions = dataOptions;
+};
 
 const currentStatus = (idName, data) => {
-    let ds = dataSaveArray.find((d) => d.pushName == idName)
-    ds.status = data
-}
+	let ds = dataSaveArray.find((d) => d.pushName == idName);
+	ds.status = data;
+};
 
 const getStatus = (idName) => {
-    return dataSaveArray.find((d) => d.pushName == idName)?.status
-}
+	return dataSaveArray.find((d) => d.pushName == idName)?.status;
+};
 
 const getDataUser = (idName) => {
-    return dataSaveArray.find((d) => d.pushName == idName)
-}
+	return dataSaveArray.find((d) => d.pushName == idName);
+};
 
-
-module.exports = {
-    saveData, converNumberToURL,
-    currentStatus, getStatus, getDataUser,
-    addSeletedVideoInfo
-}
+export {
+	saveData,
+	converNumberToURL,
+	currentStatus,
+	getStatus,
+	getDataUser,
+	addSeletedVideoInfo,
+};
