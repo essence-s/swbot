@@ -422,9 +422,11 @@ const downloadVideo = async ({
 			}
 		});
 
+		let errorOutput = '';
 		dwn.stderr.on('data', async (data) => {
 			if (data) {
-				return reject(data);
+				errorOutput += data.toString();
+				// return reject(data);
 			}
 		});
 
@@ -442,7 +444,7 @@ const downloadVideo = async ({
 				console.log(`✅ Archivo guardado como: ${finalPath}`);
 				resolve(finalPath);
 			} else {
-				reject(new Error(`yt-dlp finalizó con código ${code}`));
+				reject(new Error(errorOutput.trim()));
 			}
 		});
 	});
@@ -557,7 +559,7 @@ const downloadVideoS = async ({
 	} catch (error) {
 		console.log(error);
 
-		const errorMessage = error.toString().trim();
+		const errorMessage = error.message;
 
 		const notAvailableMsg = 'Requested format is not available';
 		const isFormatAvailable = !errorMessage.includes(notAvailableMsg);
@@ -599,7 +601,7 @@ const downloadVideoS = async ({
 				);
 			}
 		} else {
-			console.error(`Error ejecutando yt-dlp: ${errorMessage}`);
+			console.error(`Error inesperado ejecutando yt-dlp: ${errorMessage}`);
 			throw new Error('❌ Error inesperado');
 		}
 	}
