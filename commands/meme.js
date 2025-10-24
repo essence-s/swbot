@@ -1,0 +1,42 @@
+export const MEME = {
+	invo: '.mm',
+	description: 'envia un meme aleatorio',
+	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
+		let message = ctx.messages[0].message.conversation;
+
+		redirectToSubflow('meme');
+	},
+	defaultSubFlow: 'meme',
+	subFlows: {
+		meme: [
+			{
+				action: async ({ ctx, sendMessage, sendFile }) => {
+					let message = ctx.messages[0].message.conversation;
+
+					const getRandomMeme = () => {
+						return fetch('https://meme-api.com/gimme/MexicoMemes')
+							.then((response) => response.json())
+							.then((data) => {
+								if (data.nsfw) {
+									return getRandomMeme();
+								} else {
+									return data.url;
+								}
+							})
+							.catch((error) => {
+								console.error('Error al obtener el meme:', error);
+								return null;
+							});
+					};
+
+					const meme = await getRandomMeme();
+					sendFile({
+						filePath: { url: meme },
+						options: { reply: true, caption: 'Meme aleatorio', type: 'image' },
+					});
+					// sendMessage({ text: `Enviando meme aleatorio...` });
+				},
+			},
+		],
+	},
+};
