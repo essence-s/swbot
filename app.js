@@ -236,7 +236,7 @@ const SYT = {
 						message,
 						createArrayNum(cantVideos)
 					);
-					let urlVideo = dataUser.selectedVideoInfo.videoId;
+					let urlVideo = dataUser.selectedVideoInfo.videoUrl;
 					let evaluado = evalu2(
 						optionsObject.format,
 						optionsObject.numOptionQuality

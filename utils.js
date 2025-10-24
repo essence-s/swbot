@@ -52,7 +52,7 @@ const parseSearchData = (arrayfromSearch) => {
 			length: { simpleText = 'Sin duración' } = {},
 		} = d;
 		return {
-			// videoId: `https://www.youtube.com/watch?v=${id}`,
+			videoUrl: `https://www.youtube.com/watch?v=${id}`,
 			videoId: id,
 			title,
 			imgVideo: thumbnails[0].url,
@@ -383,8 +383,7 @@ const downloadVideo = async ({
 		outputTemplate,
 		...baseArgs,
 		...progress,
-		`https://www.youtube.com/watch?v=${url}`,
-		// url,
+		url,
 	];
 
 	console.log('⏬ Ejecutando comando:', args.join(' '));
