@@ -1,6 +1,7 @@
 export const MEME = {
 	invo: '.mm',
 	description: 'envia un meme aleatorio',
+	shortDescription: 'envia un meme aleatorio',
 	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
 		let message = ctx.messages[0].message.conversation;
 

@@ -1,9 +1,12 @@
-import { deleteFile, parseCLI, downloadVideoS } from '../utils.js';
+import { deleteFile, parseCLI, downloadVideoS } from '../../utils.js';
+import { config } from './config.js';
 
 export const DW = {
 	invo: '.dw',
+	shortDescription:
+		'Descarga videos o audios fácilmente con diferentes formatos y calidades.',
 	description: `
-📥 **Descargar videos o audios dd**
+📥 *Descargar videos o audios*
 
 Usa el comando con el enlace del video y agrega las opciones para elegir formato y calidad.
 
@@ -15,28 +18,16 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 🎬 *-mp4* → Descargar el video
 🎵 *-mp3* → Descargar solo el audio
 📺 *-360*, *-420*, *-720*, *-890* → Elegir la calidad del video (de menor a mayor)
-
-
 `,
-	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
+	onImmediateExecute: async ({
+		ctx,
+		sendMessage,
+		endFlow,
+		redirectToSubflow,
+	}) => {
 		let message = ctx.messages[0].message.conversation;
 
 		// const message = ctx.messages[0].message.conversation;
-		const config = {
-			name: '.dw',
-			args: [{ name: 'url', required: true }],
-			flags: [
-				{ name: 'format', alias: '-mp4', type: 'boolean', value: 'mp4' },
-				{ name: 'format', alias: '-mp3', type: 'boolean', value: 'mp3' },
-				// { name: 'output', alias: '-o', type: 'string' },
-
-				// Resoluciones como flags individuales pero apuntando a la misma key
-				{ name: 'resolution', alias: '-890', type: 'boolean', value: 890 },
-				{ name: 'resolution', alias: '-720', type: 'boolean', value: 720 },
-				{ name: 'resolution', alias: '-420', type: 'boolean', value: 420 },
-				{ name: 'resolution', alias: '-360', type: 'boolean', value: 360 },
-			],
-		};
 
 		try {
 			const parsed = parseCLI(message, config);
@@ -45,6 +36,11 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 			// 	args: { url: 'https://youtube.com' },
 			// 	options: { format: 'mp4', resolution: 360 },
 			// };
+
+			if (parsed.help) {
+				redirectToSubflow('help');
+				return;
+			}
 
 			// si encuentra en el mensaje un url valido de la lista de yt-dlp redirige al subflujo de descarga rápida
 			const urlRegex = /https?:\/\/[^\s/$.?#].[^\s]*/gi;
@@ -68,6 +64,16 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 	},
 	defaultSubFlow: 'search',
 	subFlows: {
+		help: [
+			{
+				action: async ({ ctx, sendMessage, endFlow }) => {
+					sendMessage({
+						text: DW.description,
+					});
+					// endFlow({ text: 'dino' });
+				},
+			},
+		],
 		search: [
 			{
 				action: async ({ ctx, sendMessage, endFlow }) => {

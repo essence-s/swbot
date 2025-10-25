@@ -17,6 +17,7 @@ import { addSeletedVideoInfo, getDataUser, saveData } from '../adp.js';
 export const SYT = {
 	invo: '.syt',
 	description: 'Busca y descargar videos o audios de YouTube',
+	shortDescription: 'Busca y descargar videos o audios de YouTube',
 	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
 		redirectToSubflow('search');
 	},

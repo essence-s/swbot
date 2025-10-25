@@ -1,10 +1,11 @@
-import { DW } from './dw.js';
+import { DW } from './dw/dw.js';
 // import { INFO } from './info.js';
 import { MEME } from './meme.js';
 import { SYT } from './syt.js';
 
 export const INFO = {
 	invo: '.info',
+	shortDescription: 'Muestra informacion de todos los comandos',
 	description: 'Muestra informacion de todos los comandos',
 	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
 		let message = ctx.messages[0].message.conversation;
@@ -21,7 +22,7 @@ export const INFO = {
 
 					sendMessage({
 						text: `Comandos disponibles:\n\n${superDino
-							.map((cmd) => `- ${cmd.invo} ${cmd.description}`)
+							.map((cmd) => `- ${cmd.invo} ${cmd.shortDescription}`)
 							.join('\n')}`,
 					});
 				},

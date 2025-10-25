@@ -639,6 +639,11 @@ function parseCLI(input, config) {
 		);
 	}
 
+	//Soporte opcional para "help"
+	if (config.allowHelp && (tokens[1] === 'help' || tokens[1] === '--help')) {
+		return { command: commandName, help: true };
+	}
+
 	// Resultado inicial
 	const result = { command: commandName, args: {}, options: {} };
 
