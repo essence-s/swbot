@@ -1,11 +1,12 @@
 import { Connectbaileys } from './lbSbot/GG.js';
 
 import { DW } from './commands/dw/dw.js';
-import { INFO } from './commands/info.js';
+// import { INFO } from './commands/info.js';
 import { MEME } from './commands/meme.js';
 import { SYT } from './commands/syt.js';
+import { HELP } from './commands/help.js';
 
-const superDino = [INFO, DW, MEME, SYT];
+const superDino = [HELP, DW, MEME, SYT];
 // connectToWhatsApp(superDino)
 let cB = new Connectbaileys(superDino);
 cB.initBailey();

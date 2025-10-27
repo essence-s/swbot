@@ -3,22 +3,22 @@ import { DW } from './dw/dw.js';
 import { MEME } from './meme.js';
 import { SYT } from './syt.js';
 
-export const INFO = {
-	invo: '.info',
+export const HELP = {
+	invo: '.help',
 	shortDescription: 'Muestra informacion de todos los comandos',
 	description: 'Muestra informacion de todos los comandos',
 	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
 		let message = ctx.messages[0].message.conversation;
 
-		redirectToSubflow('info');
+		redirectToSubflow('help');
 	},
-	defaultSubFlow: 'info',
+	defaultSubFlow: 'help',
 	subFlows: {
-		info: [
+		help: [
 			{
 				action: async ({ ctx, sendMessage }) => {
 					// let message = ctx.messages[0].message.conversation;
-					const superDino = [INFO, DW, MEME, SYT];
+					const superDino = [HELP, DW, MEME, SYT];
 
 					sendMessage({
 						text: `Comandos disponibles:\n\n${superDino
