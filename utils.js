@@ -779,6 +779,34 @@ async function getUniqueQualities(videoID) {
 	}
 }
 
+function updateYtDlp() {
+	return new Promise((resolve, reject) => {
+		const updater = spawn(ytdlpPath, ['-U']); // -U = update
+
+		let output = '';
+		let errorOutput = '';
+
+		updater.stdout.on('data', (data) => {
+			output += data.toString();
+		});
+
+		updater.stderr.on('data', (data) => {
+			errorOutput += data.toString();
+		});
+
+		updater.on('close', (code) => {
+			if (code === 0) {
+				console.log('✅ yt-dlp actualizado correctamente.');
+				resolve(output.trim());
+			} else {
+				reject(
+					new Error(`❌ Error actualizando yt-dlp: ${errorOutput.trim()}`)
+				);
+			}
+		});
+	});
+}
+
 export {
 	getDataSearch,
 	parseSearchData,
@@ -802,4 +830,5 @@ export {
 	deleteFile,
 	parseCLI,
 	getUniqueQualities,
+	updateYtDlp,
 };

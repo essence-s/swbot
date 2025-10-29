@@ -5,8 +5,9 @@ import { DW } from './commands/dw/dw.js';
 import { MEME } from './commands/meme.js';
 import { SYT } from './commands/syt.js';
 import { HELP } from './commands/help.js';
+import { UPDATEYTDLP } from './commands/updateYtDlp.js';
 
-const superDino = [HELP, DW, MEME, SYT];
+const superDino = [HELP, DW, MEME, SYT, UPDATEYTDLP];
 // connectToWhatsApp(superDino)
 let cB = new Connectbaileys(superDino);
 cB.initBailey();
