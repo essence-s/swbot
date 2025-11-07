@@ -10,9 +10,9 @@ export const HELP = {
 	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
 		let message = ctx.messages[0].message.conversation;
 
-		redirectToSubflow('help');
+		// redirectToSubflow('help');
 	},
-	defaultSubFlow: 'help',
+	// defaultSubFlow: 'help',
 	subFlows: {
 		help: [
 			{
