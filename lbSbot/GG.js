@@ -153,6 +153,11 @@ class Connectbaileys {
 						);
 						let nameSubFlow = await LL2(flow, m, functionsFlow2);
 						console.log(nameSubFlow);
+
+						if (!nameSubFlow) {
+							return stopProcessing(numberT);
+						}
+
 						let newSubFlow = flow.subFlows[nameSubFlow];
 
 						let sectionFunction = flowCurrent9.currentSection;
@@ -229,7 +234,9 @@ const LL2 = async (flow, m, functionsFlow) => {
 		redirectToSubflow: (subFlow) => functionsFlow.redirectToSubflow(subFlow),
 	});
 
-	return functionsFlow.nameSubFlow;
+	if (functionsFlow.nameSubFlow) return functionsFlow.nameSubFlow;
+	console.log('el default', Object.keys(flow.subFlows)[0]);
+	return flow.defaultSubFlow ?? Object.keys(flow.subFlows)[0] ?? null;
 };
 
 export { Connectbaileys };
