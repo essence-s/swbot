@@ -9,7 +9,7 @@
 	},
 	"dependencies": {
 		"@distube/ytdl-core": "^4.16.11",
-		"baileys": "^6.7.19",
+		"baileys": "^6.7.21",
 		"qrcode-terminal": "^0.12.0",
 		"youtube-search-api": "^2.0.0",
 		"youtubei.js": "^15.1.1"
