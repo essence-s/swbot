@@ -31,7 +31,8 @@ export const SYT = {
 					let message = ctx.messages[0].message.conversation;
 					let pushName = ctx.messages[0].pushName;
 
-					if (message.toLowerCase() == 'exit') return endFlow('exit');
+					if (message.toLowerCase() == 'exit')
+						return endFlow({ text: 'saliste 🏃‍♀️' });
 
 					let { items } = await getDataSearch(`${message}`, 5);
 					let parsedData = parseSearchData(items);
@@ -61,7 +62,8 @@ export const SYT = {
 				}) => {
 					let message = ctx.messages[0].message.conversation;
 					let pushName = ctx.messages[0].pushName;
-					if (message.toLowerCase() == 'exit') return endFlow('exit');
+					if (message.toLowerCase() == 'exit')
+						return endFlow({ text: 'saliste 🏃‍♀️' });
 					let optionsObject = parseStringValues(message);
 
 					let evaluated = evalu(
@@ -143,7 +145,8 @@ export const SYT = {
 				}) => {
 					let message = ctx.messages[0].message.conversation;
 					let pushName = ctx.messages[0].pushName;
-					if (message.toLowerCase() == 'exit') return endFlow('exit');
+					if (message.toLowerCase() == 'exit')
+						return endFlow({ text: 'saliste 🏃‍♀️' });
 					let dataUser = getDataUser(pushName);
 					let cantVideos = dataUser.dataQualitys.length;
 					const createArrayNum = (num) => {
