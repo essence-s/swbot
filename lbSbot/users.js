@@ -51,7 +51,7 @@ const setNameSubFlow = (number, nameSubFlow) => {
 const stableCurrent = (number) => {
 	let user = users[number];
 
-	if (user == undefined) {
+	if (!user) {
 		users[number] = { currentSection: 0, flowCurrent: '', nameSubFlow: '' };
 	}
 };
