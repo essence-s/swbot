@@ -90,19 +90,12 @@ class Connectbaileys {
 			// 	text: 'Ya hay algo en proceso, espere un momento',
 			// });
 			// let msg = m.messages[0]
-			let message;
+
 			let otherMe1 = m.messages[0].message?.conversation;
 			let otherMe2 = m.messages[0].message?.extendedTextMessage?.text;
-
+			let message = otherMe1 || otherMe2;
+			if (!message) return console.log('message not found');
 			// console.log({ message: m.messages[0].message });
-			if (otherMe1) {
-				message = otherMe1;
-			} else if (otherMe2) {
-				message = otherMe2;
-			} else {
-				console.log('message not found');
-				return;
-			}
 
 			// if (message.includes('$$')) {
 			// 	message = message.replace(/\s?\$\$/, '');
