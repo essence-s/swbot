@@ -1,4 +1,9 @@
-import { deleteFile, parseCLI, downloadVideoS } from '../../utils.js';
+import {
+	deleteFile,
+	parseCLI,
+	downloadVideoS,
+	isFileUnderSizeLimit,
+} from '../../utils.js';
 import { config } from './config.js';
 
 export const DW = {
@@ -97,14 +102,15 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 					let flagsOptions = ctx.data.parsed.options;
 
 					// envio de sticker de descargando
-					await sendSticker({
-						filePath: './assets/loader_video3.webp',
-						options: { reply: true },
-					});
+					// await sendSticker({
+					// 	filePath: './assets/loader_video3.webp',
+					// 	options: { reply: true },
+					// });
 
 					// envio de mensaje de descarga
 					const msg = await sendMessage({
 						text: `📥 Descargando ... [░░░░░░░░░░] 0%`,
+						// options: { reply: true },
 					});
 
 					// descarga y devuelve la ubicacion del video descargado
@@ -158,15 +164,28 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 						key: msg.key,
 					});
 
+					const isUnderLimit = await isFileUnderSizeLimit(pathVideo);
+					// si el archivo es menor a 100MB
 					// se esta subiendo el archivo que sera la respuesta del mensaje "reply"
-					await sendFile({ filePath: pathVideo, options: { reply: true } });
+					if (isUnderLimit && !audioOnly) {
+						await sendFile({
+							filePath: pathVideo,
+							options: { reply: true, type: 'video' },
+						});
+						console.log('File is under 100MB. Sent as video.');
+					} else {
+						await sendFile({ filePath: pathVideo, options: { reply: true } });
+						console.log('File exceeds 100MB ');
+					}
 
 					// elimino el video para no ocupar espacio
 					deleteFile([pathVideo]);
 
 					// actualizar el mensaje de decarga y procesamiento terminada
 					await updateMessage({
-						text: `✅ Video descargado y enviado correctamente. [▓▓▓▓▓▓▓▓▓▓] 100%`,
+						text: `✅ ${
+							audioOnly ? 'Audio' : 'Video'
+						} descargado y enviado correctamente. [▓▓▓▓▓▓▓▓▓▓] 100%`,
 						key: msg.key,
 					});
 				},
