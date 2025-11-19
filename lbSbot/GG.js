@@ -70,18 +70,25 @@ class Connectbaileys {
 	initSo(sock) {
 		this.vendor = sock;
 		this.vendor.ev.on('messages.upsert', async (m) => {
-			// console.log(m.messages);
+			// console.log('mensajitos');
+			// console.dir(m.messages, { depth: null });
+			// console.dir(m, { depth: null });
 
 			// comment
-			if (m.messages[0]?.key.fromMe) return;
+			if (m.messages[0]?.key.fromMe) return console.log('no entra');
 
 			let remoteJid = m.messages[0].key.remoteJid;
-			let numberT = remoteJid.split('@')[0];
+			// En grupos, el remitente real está en `key.participant`.
+			// Si no existe, es un chat individual y usamos `remoteJid`.
+			let participant = m.messages[0].key.participant || remoteJid;
+			let numberT = (participant || remoteJid).split('@')[0];
+			console.log('sender (numberT):', numberT);
+			console.log('is processing: ' + isProcessing(numberT));
 
-			if (isProcessing(numberT))
-				return await this.vendor.sendMessage(remoteJid, {
-					text: 'Ya hay algo en proceso, espere un momento',
-				});
+			if (isProcessing(numberT)) return;
+			// return await this.vendor.sendMessage(remoteJid, {
+			// 	text: 'Ya hay algo en proceso, espere un momento',
+			// });
 			// let msg = m.messages[0]
 			let message;
 			let otherMe1 = m.messages[0].message?.conversation;
@@ -93,9 +100,6 @@ class Connectbaileys {
 			} else if (otherMe2) {
 				message = otherMe2;
 			} else {
-				// await this.vendor.sendMessage(remoteJid, {
-				// 	text: 'error intente de nuevo',
-				// });
 				console.log('message not found');
 				return;
 			}
@@ -113,10 +117,10 @@ class Connectbaileys {
 			let flowCurrent9 = getCurrent(numberT);
 
 			this.dataFlows.forEach(async (flow) => {
-				startProcessing(numberT);
-
 				// si en el flujo del usuario esta activo una invocacion
 				if (flow.invo == flowCurrent9.flowCurrent) {
+					startProcessing(numberT);
+
 					const nameSubFlow = flowCurrent9.nameSubFlow;
 					const subFlow = flow.subFlows[nameSubFlow];
 					let functionsFlow = new FunctionsFlow(
@@ -138,9 +142,12 @@ class Connectbaileys {
 						flowCurrent9.nameSubFlow
 					);
 					// console.log('1', users)
+					stopProcessing(numberT);
 				} else {
 					// verificar si el mensaje tiene en invo, y despues ejecutar la funcion del invo si esta definida
 					if (message.includes(flow.invo)) {
+						startProcessing(numberT);
+
 						// guardamos en comando que se uso en el mismo usuario
 						// console.log('2', users)
 						flowCurrent9.flowCurrent = flow.invo;
@@ -169,6 +176,7 @@ class Connectbaileys {
 								text: newSubFlow[sectionFunction].word,
 							});
 							setNameSubFlow(numberT, nameSubFlow);
+							stopProcessing(numberT);
 						} else {
 							let functionsFlow = new FunctionsFlow(
 								this.vendor,
@@ -179,11 +187,10 @@ class Connectbaileys {
 							functionsFlow.addFlow(flow);
 							functionsFlow.addSubFlow(newSubFlow);
 							await LL(numberT, newSubFlow, m, functionsFlow, nameSubFlow);
+							stopProcessing(numberT);
 						}
 					}
 				}
-
-				stopProcessing(numberT);
 			});
 		});
 	}
