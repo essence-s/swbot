@@ -1,5 +1,6 @@
 import { exec, spawn } from 'child_process';
 import fs from 'fs';
+import fsPromises from 'fs/promises';
 import youtubesearchapi from 'youtube-search-api';
 import ytdl from '@distube/ytdl-core';
 import path from 'path';
@@ -359,7 +360,7 @@ const downloadVideo = async ({
 
 	const formatSelector = audioOnly
 		? 'ba[ext=m4a]/bestaudio'
-		: `bv*[ext=mp4][${resolutionSelector}]+ba[ext=m4a]`;
+		: `bv*[ext=mp4][${resolutionSelector}]+ba[ext=m4a]/mp4`;
 
 	const progress = [
 		'--newline',
@@ -807,6 +808,18 @@ function updateYtDlp() {
 	});
 }
 
+async function isFileUnderSizeLimit(filePath, maxSizeMB = 100) {
+	try {
+		const { size: fileSizeBytes } = await fsPromises.stat(filePath);
+		const maxSizeBytes = maxSizeMB * 1024 * 1024;
+
+		return fileSizeBytes < maxSizeBytes;
+	} catch (error) {
+		console.error('Failed to read file info:', error);
+		return false; // safe fallback
+	}
+}
+
 export {
 	getDataSearch,
 	parseSearchData,
@@ -831,4 +844,5 @@ export {
 	parseCLI,
 	getUniqueQualities,
 	updateYtDlp,
+	isFileUnderSizeLimit,
 };
