@@ -6,6 +6,7 @@ import {
 	evalu2,
 	getDataSearch,
 	getUniqueQualities,
+	isFileUnderSizeLimit,
 	messageCustomFormat,
 	parseSearchData,
 	parseStringValues,
@@ -292,8 +293,21 @@ export const SYT = {
 							key: msg.key,
 						});
 
+						const isUnderLimit = await isFileUnderSizeLimit(pathVideo);
+						// si el archivo es menor a 100MB
 						// se esta subiendo el archivo que sera la respuesta del mensaje "reply"
-						await sendFile({ filePath: pathVideo, options: { reply: true } });
+						if (isUnderLimit) {
+							await sendFile({
+								filePath: pathVideo,
+								options: { reply: true, type: 'video' },
+							});
+							console.log('File is under 100MB. Sent as video.');
+						} else {
+							await sendFile({ filePath: pathVideo, options: { reply: true } });
+							console.log(
+								'File exceeds 100MB. Sent as a document instead of video.'
+							);
+						}
 
 						// elimino el video para no ocupar espacio
 						deleteFile([pathVideo]);
