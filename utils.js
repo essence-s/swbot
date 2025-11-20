@@ -820,6 +820,21 @@ async function isFileUnderSizeLimit(filePath, maxSizeMB = 100) {
 	}
 }
 
+async function loadTexts(basePath, overridePath) {
+	let base = {};
+	let override = {};
+
+	try {
+		base = await import(basePath, { with: { type: 'json' } });
+	} catch {}
+
+	try {
+		override = await import(overridePath, { with: { type: 'json' } });
+	} catch {}
+
+	return { ...base.default, ...override.default };
+}
+
 export {
 	getDataSearch,
 	parseSearchData,
@@ -845,4 +860,5 @@ export {
 	getUniqueQualities,
 	updateYtDlp,
 	isFileUnderSizeLimit,
+	loadTexts,
 };
