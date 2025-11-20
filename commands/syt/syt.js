@@ -11,9 +11,15 @@ import {
 	parseSearchData,
 	parseStringValues,
 	parseStringValues2,
-} from '../utils.js';
+	loadTexts,
+} from '../../utils.js';
 
-import { addSeletedVideoInfo, getDataUser, saveData } from '../adp.js';
+import { addSeletedVideoInfo, getDataUser, saveData } from '../../adp.js';
+
+const texts = await loadTexts(
+	'./commands/syt/base.json',
+	'./commands/syt/override.json'
+);
 
 export const SYT = {
 	invo: '.syt',
@@ -26,7 +32,7 @@ export const SYT = {
 	subFlows: {
 		search: [
 			{
-				word: 'Escriba su búsqueda :V',
+				word: texts.steps[0],
 				action: async ({ ctx, sendMessage, endFlow }) => {
 					let message = ctx.messages[0].message.conversation;
 					let pushName = ctx.messages[0].pushName;
@@ -52,7 +58,7 @@ export const SYT = {
 				},
 			},
 			{
-				word: 'Elija con un numero y espere...',
+				word: texts.steps[1],
 				action: async ({
 					ctx,
 					sendMessage,
@@ -134,7 +140,7 @@ export const SYT = {
 				},
 			},
 			{
-				word: 'Elija con un numero la calidad',
+				word: texts.steps[2],
 				action: async ({
 					ctx,
 					sendMessage,

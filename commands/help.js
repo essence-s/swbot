@@ -1,7 +1,7 @@
 import { DW } from './dw/dw.js';
 // import { INFO } from './info.js';
 import { MEME } from './meme.js';
-import { SYT } from './syt.js';
+import { SYT } from './syt/syt.js';
 
 export const HELP = {
 	invo: '.help',
