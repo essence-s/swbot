@@ -12,7 +12,7 @@ import {
 	parseStringValues,
 	parseStringValues2,
 	loadTexts,
-} from '../../utils.js';
+} from '../../utils.ts';
 
 import { addSeletedVideoInfo, getDataUser, saveData } from '../../adp.js';
 

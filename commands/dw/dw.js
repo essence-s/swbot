@@ -3,7 +3,7 @@ import {
 	parseCLI,
 	downloadVideoS,
 	isFileUnderSizeLimit,
-} from '../../utils.js';
+} from '../../utils.ts';
 import { config } from './config.js';
 
 export const DW = {

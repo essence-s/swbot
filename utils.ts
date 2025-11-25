@@ -16,52 +16,65 @@ const ytdlpPath = isWindows
 	? path.join(__dirname, 'bin', 'win', 'yt-dlp.exe')
 	: path.join(__dirname, 'bin', 'linux', 'yt-dlp');
 
-const getDataSearch = async (search, maxResults) => {
-	const responseF = await youtubesearchapi.GetListByKeyword(
-		search,
+export type RawSearchItem = {
+	id: string;
+	title?: string;
+	thumbnail?: { thumbnails?: { url?: string }[] };
+	length?: { simpleText?: string } | string;
+	type?: string;
+};
+
+const getDataSearch = async (query: string, maxResults: number) => {
+	const resp = await youtubesearchapi.GetListByKeyword(
+		query,
 		false,
 		maxResults,
 		[{ type: 'video' }]
 	);
 
-	const responseFilterTypeVideo = responseF.items.filter(
-		(item) => item.type === 'video'
-	);
-	// console.dir(
-	// 	{
-	// 		response: responseF,
-	// 		da: responseF.items[0].shortBylineText,
-	// 		length: responseF.items[0].length,
-	// 	},
-	// 	{ depth: null }
-	// );
-	// console.log(responseF.items[0].shortBylineText);
-	// console.log(responseF.items[0].length);
-	// const details = await youtubesearchapi.GetVideoDetails('3AtDnEC4zak');
-	// console.log(details);
+	const videos = resp.items.filter((item) => item.type === 'video');
 
-	return { items: responseFilterTypeVideo };
+	return { items: videos as RawSearchItem[] };
 };
 
-const parseSearchData = (arrayfromSearch) => {
+export type SearchResult = {
+	videoUrl: string;
+	videoId: string;
+	title: string;
+	imgVideo: string;
+	duration: string;
+};
+
+const parseSearchData = (arrayfromSearch: RawSearchItem[]): SearchResult[] => {
 	// console.dir(arrayfromSearch, { depth: null });
 	return arrayfromSearch.map((d) => {
 		let {
 			id = 'no-id',
 			title = 'Sin título',
 			thumbnail: { thumbnails = [{ url: '' }] } = {},
-			length: { simpleText = 'Sin duración' } = {},
 		} = d;
+
+		const duration =
+			typeof d.length === 'string'
+				? d.length
+				: d.length?.simpleText ?? 'Sin duración';
+
 		return {
 			videoUrl: `https://www.youtube.com/watch?v=${id}`,
 			videoId: id,
 			title,
-			imgVideo: thumbnails[0].url,
-			duration: simpleText,
+			imgVideo: thumbnails[0].url || '',
+			duration,
 		};
 	});
 };
-const messageCustomFormat = (dataFormat) => {
+
+interface DataFormatItem {
+	duration: string;
+	title: string;
+}
+
+const messageCustomFormat = (dataFormat: DataFormatItem[]) => {
 	let dataFormatTextSend = dataFormat.reduce((suma, act, i) => {
 		return `${suma == '' ? '' : suma + '\n\n'}${
 			'```option'.padEnd(12) + '``` : ' + (i + 1)
@@ -73,36 +86,37 @@ const messageCustomFormat = (dataFormat) => {
 	return dataFormatTextSend;
 };
 
-const convertMP3 = (pathVideo, pathOutput) => {
-	return new Promise((resolve) => {
-		let outputFilePath = `${pathOutput}.mp3`;
-		// Comando FFmpeg para convertir el archivo
-		const ffmpegCommand = `ffmpeg -y -i ${pathVideo} ${outputFilePath}`;
+// const convertMP3 = (pathVideo, pathOutput) => {
+// 	return new Promise((resolve) => {
+// 		let outputFilePath = `${pathOutput}.mp3`;
+// 		// Comando FFmpeg para convertir el archivo
+// 		const ffmpegCommand = `ffmpeg -y -i ${pathVideo} ${outputFilePath}`;
 
-		const ffmpegProcess = exec(ffmpegCommand);
+// 		const ffmpegProcess = exec(ffmpegCommand);
 
-		ffmpegProcess.on('exit', (code) => {
-			if (code === 0) {
-				// console.log('La conversión se completó exitosamente.');
-				resolve(outputFilePath);
-			} else {
-				console.error('La conversión falló con el código de salida:', code);
-			}
-		});
+// 		ffmpegProcess.on('exit', (code) => {
+// 			if (code === 0) {
+// 				// console.log('La conversión se completó exitosamente.');
+// 				resolve(outputFilePath);
+// 			} else {
+// 				console.error('La conversión falló con el código de salida:', code);
+// 			}
+// 		});
 
-		// Capturar el evento close cuando el proceso se cierra
-		// ffmpegProcess.on('close', () => {
-		//     console.log('El proceso FFmpeg se ha cerrado.');
-		// });
-	});
-};
+// 		// Capturar el evento close cuando el proceso se cierra
+// 		// ffmpegProcess.on('close', () => {
+// 		//     console.log('El proceso FFmpeg se ha cerrado.');
+// 		// });
+// 	});
+// };
 
 //obtener las opciones de option ,qualyti y calidad si no los consigue se usan los default
+
 let options = ['1', '2', '3', '4', '5'];
 let formats = ['mp4', 'mp3'];
 let qualitys = ['highest', 'medium', 'lowest'];
 
-const optionSentence = (array, sentenceD, dataDefault) => {
+const optionSentence = (array: any, sentenceD: string, dataDefault: string) => {
 	let ff = sentenceD
 		.toLowerCase()
 		.split(' ')
@@ -120,14 +134,14 @@ const optionSentence = (array, sentenceD, dataDefault) => {
 //     return { option, format, quality }
 // }
 
-const parseStringValues = (sentence) => {
+const parseStringValues = (sentence: string) => {
 	let option = optionSentence(options, sentence, 'no');
 	let format = optionSentence(formats, sentence, 'no');
 	let quality = optionSentence(qualitys, sentence, 'no');
 	return { option, format, quality };
 };
 
-const evalu = (option, format, quality) => {
+const evalu = (option: string, format: string, quality: string) => {
 	// let hasData = 'yes'
 	let noData = 'no';
 	if (option == noData) {
@@ -839,7 +853,7 @@ export {
 	getDataSearch,
 	parseSearchData,
 	messageCustomFormat,
-	convertMP3,
+	// convertMP3,
 	parseStringValues2,
 	parseStringValues,
 	evalu,

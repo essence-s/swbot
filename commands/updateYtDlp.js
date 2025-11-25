@@ -1,4 +1,4 @@
-import { updateYtDlp } from '../utils.js';
+import { updateYtDlp } from '../utils.ts';
 
 export const UPDATEYTDLP = {
 	invo: '.uytdlp',
