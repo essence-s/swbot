@@ -69,21 +69,19 @@ const parseSearchData = (arrayfromSearch: RawSearchItem[]): SearchResult[] => {
 	});
 };
 
-interface DataFormatItem {
+type FormatItem = {
 	duration: string;
 	title: string;
-}
+};
 
-const messageCustomFormat = (dataFormat: DataFormatItem[]) => {
-	let dataFormatTextSend = dataFormat.reduce((suma, act, i) => {
+const messageCustomFormat = (items: FormatItem[]) => {
+	return items.reduce((suma, act, i) => {
 		return `${suma == '' ? '' : suma + '\n\n'}${
 			'```option'.padEnd(12) + '``` : ' + (i + 1)
 		}\n${'```duration'.padEnd(12) + '``` : ' + act.duration}\n${
 			'```title'.padEnd(12) + '``` : ' + act.title
 		}`;
 	}, '');
-
-	return dataFormatTextSend;
 };
 
 // const convertMP3 = (pathVideo, pathOutput) => {
