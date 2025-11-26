@@ -570,8 +570,20 @@ const deleteFile = (files: string[]) => {
 	});
 };
 
+export type CliArgDef = { name: string; required?: boolean };
+export type CliFlagDef =
+	| { name: string; alias: string; type: 'boolean' }
+	| { name: string; alias: string; type: 'string' | 'number'; value?: any };
+
+export type CliConfig = {
+	name: string;
+	args?: CliArgDef[];
+	flags?: CliFlagDef[];
+	allowHelp?: boolean;
+};
+
 // Tokenizar input
-function tokenize(input) {
+function tokenize(input: string) {
 	return (
 		input
 			.match(/"[^"]*"|\S+/g)
@@ -580,7 +592,7 @@ function tokenize(input) {
 }
 
 // Detectar comando,argumentos y flags
-function parseCLI(input, config) {
+function parseCLI(input: string, config: CliConfig) {
 	// Tokenizamos
 	const tokens = tokenize(input.trim());
 
@@ -603,7 +615,11 @@ function parseCLI(input, config) {
 	}
 
 	// Resultado inicial
-	const result = { command: commandName, args: {}, options: {} };
+	const result: {
+		command: string;
+		args: Record<string, string | number>;
+		options: Record<string, any>;
+	} = { command: commandName, args: {}, options: {} };
 
 	// Procesar argumentos posicionales
 	// Empezamos en 1 porque el índice 0 es el comando
@@ -641,7 +657,7 @@ function parseCLI(input, config) {
 		// console.log('→ Flag reconocida:', flagDef);
 
 		// Value implícito
-		if (flagDef.value !== undefined) {
+		if ('value' in flagDef && flagDef.value !== undefined) {
 			result.options[flagDef.name] = flagDef.value;
 			// console.log(`→ options.${flagDef.name} = ${flagDef.value} (value implícito)`);
 			continue;
