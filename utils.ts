@@ -686,7 +686,7 @@ function parseCLI(input: string, config: CliConfig) {
 }
 
 function updateYtDlp() {
-	return new Promise((resolve, reject) => {
+	return new Promise<string>((resolve, reject) => {
 		const updater = spawn(ytdlpPath, ['-U']); // -U = update
 
 		let output = '';
