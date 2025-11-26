@@ -168,7 +168,84 @@ const evalu2 = (format: string, numOptionQuality: string) => {
 	};
 };
 
-let dataInfoMesague = (array) => {
+import Innertube from 'youtubei.js';
+
+export type QualityDescriptor = {
+	resolution: string | number;
+	ext: string;
+	itag?: number;
+	bitrate?: number;
+};
+
+async function getUniqueQualities(
+	videoID: string
+): Promise<QualityDescriptor[]> {
+	try {
+		const innertube = await Innertube.create();
+
+		// const videoID = 'dQw4w9WgXcQ';
+
+		const videoInfo = await innertube.getBasicInfo(videoID);
+
+		const formats = [
+			...(videoInfo.streaming_data?.formats || []),
+			...(videoInfo.streaming_data?.adaptive_formats || []),
+		];
+
+		const qualityMap = new Map<string | number, QualityDescriptor>();
+
+		const audioFormats = formats.filter(
+			(fmt) => !fmt.height && fmt.mime_type?.includes('audio')
+		);
+
+		if (audioFormats.length > 0) {
+			// ordenar por bitrate descendente y elegir el mejor
+			const bestAudio = audioFormats.sort(
+				(a, b) => (b.bitrate || 0) - (a.bitrate || 0)
+			)[0];
+
+			qualityMap.set('audio', {
+				resolution: 'audio',
+				// ext: bestAudio.mime_type.includes('mp4') ? 'm4a' : 'webm',
+				ext: 'mp3',
+				itag: bestAudio.itag,
+				bitrate: bestAudio.bitrate,
+			});
+		}
+
+		formats.forEach((fmt) => {
+			const resolution = fmt.height;
+			if (!resolution) return; // descartar si es solo audio
+
+			if (!qualityMap.has(resolution)) {
+				qualityMap.set(resolution, {
+					// itag: fmt.itag,
+					resolution,
+					ext: 'mp4',
+					// mime_type: fmt.mime_type,
+					// codec: fmt.mime_type?.split('codecs="')[1]?.replace('"', ''),
+					// has_audio: !!fmt.audio_quality || fmt.mime_type.includes('audio'),
+					// container: fmt.mime_type?.split(';')[0],
+				});
+			}
+		});
+
+		// Ordenar por resolución
+		const ordered = Array.from(qualityMap.values()).sort((a, b) => {
+			if (a.resolution === 'audio') return -1;
+			if (b.resolution === 'audio') return 1;
+			return Number(a.resolution) - Number(b.resolution);
+		});
+
+		return ordered;
+	} catch (err: any) {
+		console.error('Error al obtener calidades:', err.message);
+
+		throw new Error('No se pudieron obtener las calidades');
+	}
+}
+
+const formatMessageInfo = (array: QualityDescriptor[]) => {
 	let datamesague = array.reduce((ant, format, i) => {
 		return `${ant} ${i + 1} : ${format.resolution} ${format.ext} \n`;
 	}, '');
@@ -573,74 +650,6 @@ function parseCLI(input, config) {
 	return result;
 }
 
-import Innertube from 'youtubei.js';
-
-async function getUniqueQualities(videoID) {
-	try {
-		const innertube = await Innertube.create();
-
-		// const videoID = 'dQw4w9WgXcQ';
-
-		const videoInfo = await innertube.getBasicInfo(videoID);
-
-		const formats = [
-			...(videoInfo.streaming_data.formats || []),
-			...(videoInfo.streaming_data.adaptive_formats || []),
-		];
-
-		const qualityMap = new Map();
-
-		const audioFormats = formats.filter(
-			(fmt) => !fmt.height && fmt.mime_type?.includes('audio')
-		);
-
-		if (audioFormats.length > 0) {
-			// ordenar por bitrate descendente y elegir el mejor
-			const bestAudio = audioFormats.sort(
-				(a, b) => (b.bitrate || 0) - (a.bitrate || 0)
-			)[0];
-
-			qualityMap.set('audio', {
-				resolution: 'audio',
-				// ext: bestAudio.mime_type.includes('mp4') ? 'm4a' : 'webm',
-				ext: 'mp3',
-				itag: bestAudio.itag,
-				bitrate: bestAudio.bitrate,
-			});
-		}
-
-		formats.forEach((fmt) => {
-			const resolution = fmt.height;
-			if (!resolution) return; // descartar si es solo audio
-
-			if (!qualityMap.has(resolution)) {
-				qualityMap.set(resolution, {
-					// itag: fmt.itag,
-					resolution,
-					ext: 'mp4',
-					// mime_type: fmt.mime_type,
-					// codec: fmt.mime_type?.split('codecs="')[1]?.replace('"', ''),
-					// has_audio: !!fmt.audio_quality || fmt.mime_type.includes('audio'),
-					// container: fmt.mime_type?.split(';')[0],
-				});
-			}
-		});
-
-		// Ordenar por resolución
-		const ordered = Array.from(qualityMap.values()).sort((a, b) => {
-			if (a.resolution === 'audio') return -1;
-			if (b.resolution === 'audio') return 1;
-			return parseInt(a.resolution) - parseInt(b.resolution);
-		});
-
-		return ordered;
-	} catch (err) {
-		console.error('Error al obtener calidades:', err.message);
-
-		throw new Error('No se pudieron obtener las calidades');
-	}
-}
-
 function updateYtDlp() {
 	return new Promise((resolve, reject) => {
 		const updater = spawn(ytdlpPath, ['-U']); // -U = update
@@ -705,10 +714,10 @@ export {
 	parseStringValues,
 	evalu,
 	evalu2,
-	dataInfoMesague,
-	getVideoInfo,
-	getVideoInfo2,
-	downloadG,
+	formatMessageInfo,
+	// getVideoInfo,
+	// getVideoInfo2,
+	// downloadG,
 	downloadVideo,
 	downloadVideoS,
 	joinVideoAndAudio,

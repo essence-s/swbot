@@ -1,5 +1,5 @@
 import {
-	dataInfoMesague,
+	formatMessageInfo,
 	deleteFile,
 	downloadVideoS,
 	evalu,
@@ -120,7 +120,7 @@ export const SYT = {
 							});
 
 							// console.log(datainfoQualitys);
-							let infoMessague = dataInfoMesague(datainfoQualitys);
+							let infoMessague = formatMessageInfo(datainfoQualitys);
 
 							await updateMessage({
 								text: infoMessague,
