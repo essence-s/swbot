@@ -558,8 +558,8 @@ const downloadVideoS = async ({
 // 	return encodedFileName;
 // }
 
-const deleteFile = (arrayFiles) => {
-	arrayFiles.map((fileName) => {
+const deleteFile = (files: string[]) => {
+	files.map((fileName) => {
 		fs.unlink(fileName, (err) => {
 			if (err) {
 				console.error('Error al borrar el archivo:', err);
