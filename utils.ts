@@ -114,7 +114,11 @@ let options = ['1', '2', '3', '4', '5'];
 let formats = ['mp4', 'mp3'];
 let qualitys = ['highest', 'medium', 'lowest'];
 
-const optionSentence = (array: any, sentenceD: string, dataDefault: string) => {
+const optionSentence = (
+	array: string[],
+	sentenceD: string,
+	dataDefault: string
+) => {
 	let ff = sentenceD
 		.toLowerCase()
 		.split(' ')
@@ -123,14 +127,6 @@ const optionSentence = (array: any, sentenceD: string, dataDefault: string) => {
 	if (!ll) return dataDefault;
 	return ll;
 };
-// sentence ='1 mp4 medium'
-// const parseStringValues = (sentence) => {
-//     let option = optionSentence(options, sentence, 'no')
-//     let format = optionSentence(formats, sentence, 'mp4')
-//     let quality = optionSentence(qualitys, sentence, 'lowest')
-//     if (option == 'no') return 'noOption'
-//     return { option, format, quality }
-// }
 
 const parseStringValues = (sentence: string) => {
 	let option = optionSentence(options, sentence, 'no');
@@ -159,165 +155,18 @@ const evalu = (option: string, format: string, quality: string) => {
 	};
 };
 
-const parseStringValues2 = (sentence, qualitysN) => {
+const parseStringValues2 = (sentence: string, qualitysN: string[]) => {
 	let format = optionSentence(formats, sentence, 'no');
 	let numOptionQuality = optionSentence(qualitysN, sentence, 'no');
 	return { format, numOptionQuality };
 };
 
-const evalu2 = (format, numOptionQuality) => {
+const evalu2 = (format: string, numOptionQuality: string) => {
 	return {
 		format: format == 'no' ? 'mp4' : format,
 		numOptionQuality: numOptionQuality == 'no' ? '1' : numOptionQuality,
 	};
 };
-
-const sizeFile = (filePath) => {
-	return new Promise((resolve) => {
-		fs.stat(filePath, (err, stats) => {
-			if (err) {
-				console.error(err);
-				return;
-			}
-			const fileSize = stats.size; // Tamaño en bytes
-			resolve(fileSize);
-		});
-	});
-};
-
-const totalFileSize = async (arrayNamesFiles) => {
-	let promisesFS = arrayNamesFiles.map((anf) => sizeFile(anf));
-	const data = await Promise.all(promisesFS);
-
-	let totalSizeInBytes = data.reduce((sum, act) => sum + act, 0);
-	let totalSizeInMB = totalSizeInBytes / (1024 * 1024);
-	return totalSizeInMB;
-};
-
-const checkTotalFileSize = (FileSizeInMB) => {
-	if (FileSizeInMB <= 2000) {
-		return 'ok';
-	}
-
-	return 'passedLimit';
-};
-
-async function getVideoInfo(videoURL) {
-	try {
-		let videos = [];
-		let audios = [];
-		const info = await ytdl.getInfo(videoURL);
-		// console.log(info)
-
-		info.formats.forEach((format, i) => {
-			if (
-				format.hasVideo == true &&
-				format.hasAudio == false &&
-				format.container == 'mp4'
-			) {
-				let { qualityLabel, container, url } = format;
-
-				videos.push({
-					index: i,
-					qualityLabel: qualityLabel,
-					container: container,
-					urlDnwl: url,
-				});
-			} else if (
-				format.hasVideo == false &&
-				format.hasAudio == true &&
-				format.container == 'mp4'
-			) {
-				let { container, url } = format;
-
-				audios.push({
-					index: i,
-					container: container,
-					urlDnwl: url,
-				});
-			}
-		});
-
-		return { videos: videos.reverse(), audios };
-	} catch (error) {
-		console.error('Error al obtener la información', error);
-	}
-}
-
-async function getVideoInfo2(url) {
-	const yt_dlp = ytdlpPath;
-
-	return new Promise((resolve, reject) => {
-		exec(`${yt_dlp} -j "${url}"`, (error, stdout, stderr) => {
-			if (error) {
-				console.error(`Error ejecutando yt-dlp: ${error.message}`);
-				return;
-			}
-			if (stderr) {
-				console.error(`stderr: ${stderr}`);
-			}
-
-			try {
-				const data = JSON.parse(stdout);
-				// console.log('✅ JSON cargado:');
-				// console.log(data.formats.map((f) => f.format_id));
-
-				const formats = data.formats;
-
-				// Filtrado de videos y audios fusionables (mismo ext, sin conversión)
-				const videoOnly = formats.filter(
-					(f) => f.vcodec !== 'none' && f.acodec === 'none' && f.ext === 'mp4'
-				);
-
-				const audioOnly = formats.filter(
-					(f) => f.acodec !== 'none' && f.vcodec == 'none' && f.ext === 'mp4'
-				);
-
-				// console.log(audioOnly);
-
-				// Agrupar videos por altura (resolución) única
-				const videosByResolution = {};
-				videoOnly.forEach((v) => {
-					const key = v.height;
-					if (!videosByResolution[key]) {
-						videosByResolution[key] = v;
-					}
-				});
-
-				// solo audio compatible para todos
-				const bestAudio = audioOnly.sort((a, b) => {
-					const order = ['low', 'medium', 'high'];
-					const getPriority = (note = '') =>
-						order.findIndex((p) => note.toLowerCase().includes(p));
-					return getPriority(b.format_note) - getPriority(a.format_note);
-				})[0];
-
-				// console.log('El mejor audio sin abr es:', bestAudio.format_id);
-
-				// pares fusionables por resolución
-				const fusionPairs = Object.values(videosByResolution).map(
-					(video, i) => {
-						return {
-							index: i,
-							format_id: video.format_id,
-							audio: bestAudio.format_id,
-							resolution: video.height,
-							ext: video.ext,
-							url,
-						};
-					}
-				);
-
-				// console.log(fusionPairs);
-
-				resolve(fusionPairs);
-			} catch (parseError) {
-				console.error('❌ Error al parsear JSON:', parseError);
-				reject(parseError);
-			}
-		});
-	});
-}
 
 let dataInfoMesague = (array) => {
 	let datamesague = array.reduce((ant, format, i) => {
@@ -327,27 +176,27 @@ let dataInfoMesague = (array) => {
 	return datamesague;
 };
 
-const downloadG = async (url, index, name) => {
-	const videoURL = url;
+// const downloadG = async (url, index, name) => {
+// 	const videoURL = url;
 
-	let outputFilePath = `${name}.mp4`;
-	return new Promise(async (resolve) => {
-		const info = await ytdl.getInfo(videoURL);
-		// console.log('dataformat', index);
-		const options = {
-			format: info.formats[index],
-		};
-		ytdl(videoURL, options)
-			.pipe(fs.createWriteStream(outputFilePath))
-			.on('finish', () => {
-				// console.log('Video descargado correctamente.');
-				resolve(outputFilePath);
-			})
-			.on('error', (error) => {
-				console.error('Error al descargar el video:', error);
-			});
-	});
-};
+// 	let outputFilePath = `${name}.mp4`;
+// 	return new Promise(async (resolve) => {
+// 		const info = await ytdl.getInfo(videoURL);
+// 		// console.log('dataformat', index);
+// 		const options = {
+// 			format: info.formats[index],
+// 		};
+// 		ytdl(videoURL, options)
+// 			.pipe(fs.createWriteStream(outputFilePath))
+// 			.on('finish', () => {
+// 				// console.log('Video descargado correctamente.');
+// 				resolve(outputFilePath);
+// 			})
+// 			.on('error', (error) => {
+// 				console.error('Error al descargar el video:', error);
+// 			});
+// 	});
+// };
 
 const downloadVideo = async ({
 	url,
@@ -863,8 +712,8 @@ export {
 	downloadVideo,
 	downloadVideoS,
 	joinVideoAndAudio,
-	totalFileSize,
-	checkTotalFileSize,
+	// totalFileSize,
+	// checkTotalFileSize,
 	renameVideo,
 	generateRandomName,
 	deleteFile,
