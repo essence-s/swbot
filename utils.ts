@@ -275,6 +275,15 @@ const formatMessageInfo = (array: QualityDescriptor[]) => {
 // 	});
 // };
 
+function findGeneratedFile(randomName: string, ext: string): string | null {
+	const files = fs.readdirSync(process.cwd());
+	const match = files.find(
+		(file) =>
+			file.includes(randomName) && file.toLowerCase().endsWith(`.${ext}`)
+	);
+	return match ? path.resolve(match) : null;
+}
+
 export type DownloadProgress = {
 	type: 'video' | 'audio';
 	downloaded: number;
@@ -483,15 +492,6 @@ const downloadVideoS = async ({
 
 	return pathVideo;
 };
-
-function findGeneratedFile(randomName, ext) {
-	const files = fs.readdirSync(process.cwd());
-	const match = files.find(
-		(file) =>
-			file.includes(randomName) && file.toLowerCase().endsWith(`.${ext}`)
-	);
-	return match ? path.resolve(match) : null;
-}
 
 function sanitizeFilename(name) {
 	return name.replace(/[\\/:*?"<>|]/g, '').trim();
