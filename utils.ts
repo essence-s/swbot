@@ -275,6 +275,20 @@ const formatMessageInfo = (array: QualityDescriptor[]) => {
 // 	});
 // };
 
+const generateRandomName = () => {
+	const characters =
+		'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+	const nameLength = 8;
+
+	let randomName = '';
+	for (let i = 0; i < nameLength; i++) {
+		const randomIndex = Math.floor(Math.random() * characters.length);
+		randomName += characters[randomIndex];
+	}
+
+	return randomName;
+};
+
 function findGeneratedFile(randomName: string, ext: string): string | null {
 	const files = fs.readdirSync(process.cwd());
 	const match = files.find(
@@ -493,73 +507,56 @@ const downloadVideoS = async ({
 	return pathVideo;
 };
 
-function sanitizeFilename(name) {
-	return name.replace(/[\\/:*?"<>|]/g, '').trim();
-}
+// const joinVideoAndAudio = (videoPath, audioPath, ouputName) => {
+// 	return new Promise((resolve) => {
+// 		let outputFilePath = `${ouputName}.mp4`;
+// 		const ffmpegCommand = `ffmpeg -y -i ${videoPath} -i ${audioPath} -c:v copy -c:a copy ${outputFilePath}`;
+// 		// console.log(ffmpegCommand)
+// 		const ffmpegProcess = exec(ffmpegCommand);
 
-const joinVideoAndAudio = (videoPath, audioPath, ouputName) => {
-	return new Promise((resolve) => {
-		let outputFilePath = `${ouputName}.mp4`;
-		const ffmpegCommand = `ffmpeg -y -i ${videoPath} -i ${audioPath} -c:v copy -c:a copy ${outputFilePath}`;
-		// console.log(ffmpegCommand)
-		const ffmpegProcess = exec(ffmpegCommand);
+// 		ffmpegProcess.on('exit', (code) => {
+// 			if (code === 0) {
+// 				// console.log('La Union se completó exitosamente.');
+// 				resolve(outputFilePath);
+// 			} else {
+// 				console.error('La Union falló con el código de salida:', code);
+// 			}
+// 		});
+// 	});
+// };
 
-		ffmpegProcess.on('exit', (code) => {
-			if (code === 0) {
-				// console.log('La Union se completó exitosamente.');
-				resolve(outputFilePath);
-			} else {
-				console.error('La Union falló con el código de salida:', code);
-			}
-		});
-	});
-};
-const renameVideo = (path, newPath) => {
-	return new Promise((resolve) => {
-		fs.rename(path, newPath, (error) => {
-			if (error) {
-				console.log('error al renombrar', error);
-			} else {
-				// console.log('renombrado')
-				resolve(newPath);
-			}
-		});
-	});
-};
+// const renameVideo = (path, newPath) => {
+// 	return new Promise((resolve) => {
+// 		fs.rename(path, newPath, (error) => {
+// 			if (error) {
+// 				console.log('error al renombrar', error);
+// 			} else {
+// 				// console.log('renombrado')
+// 				resolve(newPath);
+// 			}
+// 		});
+// 	});
+// };
 
-function encodeInvalidCharacters(fileName) {
-	const invalidChars = ['\\', '/', ':', '*', '?', '"', '<', '>', '|'];
+// function encodeInvalidCharacters(fileName) {
+// 	const invalidChars = ['\\', '/', ':', '*', '?', '"', '<', '>', '|'];
 
-	let encodedFileName = '';
-	for (let i = 0; i < fileName.length; i++) {
-		const char = fileName[i];
-		if (invalidChars.includes(char)) {
-			if (char === '*') {
-				encodedFileName += '%2A';
-			} else {
-				encodedFileName += encodeURIComponent(char);
-			}
-		} else {
-			encodedFileName += char;
-		}
-	}
+// 	let encodedFileName = '';
+// 	for (let i = 0; i < fileName.length; i++) {
+// 		const char = fileName[i];
+// 		if (invalidChars.includes(char)) {
+// 			if (char === '*') {
+// 				encodedFileName += '%2A';
+// 			} else {
+// 				encodedFileName += encodeURIComponent(char);
+// 			}
+// 		} else {
+// 			encodedFileName += char;
+// 		}
+// 	}
 
-	return encodedFileName;
-}
-
-const generateRandomName = () => {
-	const characters =
-		'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-	const nameLength = 8;
-
-	let randomName = '';
-	for (let i = 0; i < nameLength; i++) {
-		const randomIndex = Math.floor(Math.random() * characters.length);
-		randomName += characters[randomIndex];
-	}
-
-	return randomName;
-};
+// 	return encodedFileName;
+// }
 
 const deleteFile = (arrayFiles) => {
 	arrayFiles.map((fileName) => {
@@ -742,11 +739,11 @@ export {
 	// downloadG,
 	downloadVideo,
 	downloadVideoS,
-	joinVideoAndAudio,
+	// joinVideoAndAudio,
 	// totalFileSize,
 	// checkTotalFileSize,
-	renameVideo,
-	generateRandomName,
+	// renameVideo,
+	// generateRandomName,
 	deleteFile,
 	parseCLI,
 	getUniqueQualities,
