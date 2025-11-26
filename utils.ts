@@ -713,7 +713,10 @@ function updateYtDlp() {
 	});
 }
 
-async function isFileUnderSizeLimit(filePath, maxSizeMB = 100) {
+async function isFileUnderSizeLimit(
+	filePath: string,
+	maxSizeMB = 100
+): Promise<boolean> {
 	try {
 		const { size: fileSizeBytes } = await fsPromises.stat(filePath);
 		const maxSizeBytes = maxSizeMB * 1024 * 1024;
