@@ -275,14 +275,29 @@ const formatMessageInfo = (array: QualityDescriptor[]) => {
 // 	});
 // };
 
-const downloadVideo = async ({
-	url,
-	resolution = null,
-	audioOnly = false,
-	allowLowerQuality = false,
-	onProgress = null,
-	onWarning = null,
-}) => {
+export type DownloadProgress = {
+	type: 'video' | 'audio';
+	downloaded: number;
+	total: number;
+	percent: number;
+};
+
+const downloadVideo = async (opts: {
+	url: string;
+	resolution?: number | string | null;
+	audioOnly?: boolean;
+	allowLowerQuality?: boolean;
+	onProgress?: (p: DownloadProgress) => void | Promise<void>;
+	onWarning?: (w: { text: string }) => void | Promise<void>;
+}): Promise<string> => {
+	const {
+		url,
+		resolution = null,
+		audioOnly = false,
+		allowLowerQuality = false,
+		onProgress,
+		onWarning,
+	} = opts;
 	const yt_dlp_path = ytdlpPath;
 	const randomName = generateRandomName();
 	const outputTemplate = `%(title).80s__${randomName}.%(ext)s`;
@@ -343,7 +358,7 @@ const downloadVideo = async ({
 				if (!m1) continue;
 
 				const [, fileOrExt, downloadedStr, totalStr] = m1;
-				let currentType;
+				let currentType: 'video' | 'audio';
 				let downloaded = Number(downloadedStr);
 				let total = Number(totalStr);
 
@@ -390,6 +405,83 @@ const downloadVideo = async ({
 			}
 		});
 	});
+};
+
+const downloadVideoS = async ({
+	url,
+	resolution,
+	audioOnly,
+	allowLowerQuality,
+	onProgress,
+	onWarning,
+}: {
+	url: string;
+	resolution?: number | string | null;
+	audioOnly?: boolean;
+	allowLowerQuality?: boolean;
+	onProgress?: (p: DownloadProgress) => void | Promise<void>;
+	onWarning?: (w: { text: string }) => void | Promise<void>;
+}) => {
+	let pathVideo = '';
+	try {
+		pathVideo = await downloadVideo({
+			url,
+			resolution,
+			audioOnly,
+			allowLowerQuality: false,
+			onProgress,
+		});
+	} catch (error: any) {
+		console.log(error);
+
+		const errorMessage = error.message;
+
+		const notAvailableMsg = 'Requested format is not available';
+		const isFormatAvailable = !errorMessage.includes(notAvailableMsg);
+		if (errorMessage.startsWith('ERROR:') && !isFormatAvailable) {
+			// console.warn(
+			// 	`⚠️ No se encontró resolución exacta (${resolution}p). Usando calidad menor o igual disponible...`
+			// );
+
+			console.error(`Error ejecutando yt-dlp: ${errorMessage}`);
+			// return reject('noResolutionAvailable');
+
+			if (!allowLowerQuality) {
+				throw new Error('⚠️ Resolución exacta no disponible');
+			}
+
+			console.warn(' Reintentando con calidad menor o igual');
+
+			if (onWarning) {
+				console.log('se ejecuta onWarning');
+				await onWarning({
+					text: '⚠️ Resolución exacta no disponible. Reintentando con calidad menor o igual...',
+				});
+			}
+
+			try {
+				pathVideo = await downloadVideo({
+					url,
+					resolution,
+					audioOnly,
+					allowLowerQuality,
+					onProgress,
+					onWarning,
+				});
+			} catch (fallbackError) {
+				console.error('❌ Fallback también falló:', fallbackError);
+
+				throw new Error(
+					'❌ No se pudo descargar el video con ninguna calidad disponible.'
+				);
+			}
+		} else {
+			console.error(`Error inesperado ejecutando yt-dlp: ${errorMessage}`);
+			throw new Error('❌ Error inesperado');
+		}
+	}
+
+	return pathVideo;
 };
 
 function findGeneratedFile(randomName, ext) {
@@ -479,76 +571,6 @@ const deleteFile = (arrayFiles) => {
 			}
 		});
 	});
-};
-
-const downloadVideoS = async ({
-	url,
-	resolution,
-	audioOnly,
-	allowLowerQuality,
-	onProgress,
-	onWarning,
-}) => {
-	let pathVideo = '';
-	try {
-		pathVideo = await downloadVideo({
-			url,
-			resolution,
-			audioOnly,
-			allowLowerQuality: false,
-			onProgress,
-		});
-	} catch (error) {
-		console.log(error);
-
-		const errorMessage = error.message;
-
-		const notAvailableMsg = 'Requested format is not available';
-		const isFormatAvailable = !errorMessage.includes(notAvailableMsg);
-		if (errorMessage.startsWith('ERROR:') && !isFormatAvailable) {
-			// console.warn(
-			// 	`⚠️ No se encontró resolución exacta (${resolution}p). Usando calidad menor o igual disponible...`
-			// );
-
-			console.error(`Error ejecutando yt-dlp: ${errorMessage}`);
-			// return reject('noResolutionAvailable');
-
-			if (!allowLowerQuality) {
-				throw new Error('⚠️ Resolución exacta no disponible');
-			}
-
-			console.warn(' Reintentando con calidad menor o igual');
-
-			if (onWarning) {
-				console.log('se ejecuta onWarning');
-				await onWarning({
-					text: '⚠️ Resolución exacta no disponible. Reintentando con calidad menor o igual...',
-				});
-			}
-
-			try {
-				pathVideo = await downloadVideo({
-					url,
-					resolution,
-					audioOnly,
-					allowLowerQuality,
-					onProgress,
-					onWarning,
-				});
-			} catch (fallbackError) {
-				console.error('❌ Fallback también falló:', fallbackError);
-
-				throw new Error(
-					'❌ No se pudo descargar el video con ninguna calidad disponible.'
-				);
-			}
-		} else {
-			console.error(`Error inesperado ejecutando yt-dlp: ${errorMessage}`);
-			throw new Error('❌ Error inesperado');
-		}
-	}
-
-	return pathVideo;
 };
 
 // Tokenizar input
