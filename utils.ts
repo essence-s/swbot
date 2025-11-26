@@ -728,9 +728,12 @@ async function isFileUnderSizeLimit(
 	}
 }
 
-async function loadTexts(basePath, overridePath) {
-	let base = {};
-	let override = {};
+async function loadTexts(
+	basePath: string,
+	overridePath: string
+): Promise<Record<string, any>> {
+	let base: any = {};
+	let override: any = {};
 
 	try {
 		base = await import(basePath, { with: { type: 'json' } });
@@ -740,7 +743,7 @@ async function loadTexts(basePath, overridePath) {
 		override = await import(overridePath, { with: { type: 'json' } });
 	} catch {}
 
-	return { ...base.default, ...override.default };
+	return { ...(base?.default ?? {}), ...(override?.default ?? {}) };
 }
 
 export {
