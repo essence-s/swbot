@@ -2,7 +2,6 @@ export interface CommandContext {
 	msg: any;
 	messages: any[];
 }
-
 export interface ExecuteParams {
 	ctx: CommandContext;
 	sendMessage: (args: {

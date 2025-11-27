@@ -15,7 +15,7 @@ import {
 } from '../../utils.ts';
 
 import { addSeletedVideoInfo, getDataUser, saveData } from '../../adp.js';
-import { Command } from '../../lbSbot/types/command.ts';
+import type { Command } from '../../lbSbot/types/command.ts';
 
 const texts = await loadTexts(
 	'./commands/syt/base.json',
