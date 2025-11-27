@@ -15,13 +15,14 @@ import {
 } from '../../utils.ts';
 
 import { addSeletedVideoInfo, getDataUser, saveData } from '../../adp.js';
+import { Command } from '../../lbSbot/types/command.ts';
 
 const texts = await loadTexts(
 	'./commands/syt/base.json',
 	'./commands/syt/override.json'
 );
 
-export const SYT = {
+export const SYT: Command = {
 	invo: '.syt',
 	description: 'Busca y descargar videos o audios de YouTube',
 	shortDescription: 'Busca y descargar videos o audios de YouTube',
