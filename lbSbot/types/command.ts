@@ -15,19 +15,19 @@ export interface ExecuteParams {
 	updateMessage: (args: { text: string; key: any }) => Promise<any>;
 	endFlow: (args: { text: string }) => Promise<void>;
 
-	sendFile?: (args: {
+	sendFile: (args: {
 		filePath: string | { url: string };
 		fileName?: string;
 		options?: { reply?: boolean; type?: string; caption?: string };
 	}) => Promise<any>;
 
-	sendSticker?: (args: {
+	sendSticker: (args: {
 		filePath: string;
 		options?: { reply?: boolean };
 	}) => Promise<any>;
 }
 
-export type CommandAction = (params: ExecuteParams) => Promise<void>;
+export type CommandAction = (params: ExecuteParams) => any | Promise<any>;
 
 export interface SubFlowStep {
 	word?: string;
