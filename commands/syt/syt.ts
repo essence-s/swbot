@@ -44,7 +44,7 @@ export const SYT: Command = {
 					let { items } = await getDataSearch(`${message}`, 5);
 					let parsedData = parseSearchData(items);
 
-					saveData(pushName, (dataAct) => {
+					saveData(pushName, (dataAct: any) => {
 						return {
 							...dataAct,
 							pushName: pushName,
@@ -78,17 +78,21 @@ export const SYT: Command = {
 						optionsObject.format,
 						optionsObject.quality
 					);
-					if (evaluated == 'noDataOption') {
-						// console.log('fallback')
-						return fallBack();
+					if (typeof evaluated === 'string') {
+						return evaluated == 'noDataOption' && fallBack();
 					}
 
-					addSeletedVideoInfo(pushName, evaluated.dataOptions.option - 1);
+					addSeletedVideoInfo(
+						pushName,
+						Number(evaluated.dataOptions?.option) - 1
+					);
 
-					saveData(pushName, (dataAct) => {
+					saveData(pushName, (dataAct: any) => {
 						return {
 							...dataAct,
-							dataOptions: { ...evaluated.dataOptions },
+							dataOptions: {
+								...evaluated.dataOptions,
+							},
 						};
 					});
 
@@ -113,7 +117,7 @@ export const SYT: Command = {
 
 							// let datainfoQualitys = await getVideoInfo2(url);
 
-							saveData(pushName, (dataAct) => {
+							saveData(pushName, (dataAct: any) => {
 								return {
 									...dataAct,
 									dataQualitys: datainfoQualitys,
@@ -127,7 +131,7 @@ export const SYT: Command = {
 								text: infoMessague,
 								key: msg.key,
 							});
-						} catch (err) {
+						} catch (err: any) {
 							const msg = await msgPromise;
 							await updateMessage({
 								text: `${err.message}\nPor favor, vuelva a intentarlo.`,
@@ -156,10 +160,10 @@ export const SYT: Command = {
 						return endFlow({ text: 'saliste 🏃‍♀️' });
 					let dataUser = getDataUser(pushName);
 					let cantVideos = dataUser.dataQualitys.length;
-					const createArrayNum = (num) => {
+					const createArrayNum = (num: number) => {
 						let arrayOptinosLengthVideos = [];
 						for (let i = 1; i <= num; i++) {
-							arrayOptinosLengthVideos.push(i);
+							arrayOptinosLengthVideos.push('' + i);
 						}
 						return arrayOptinosLengthVideos;
 					};
