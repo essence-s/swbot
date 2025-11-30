@@ -50,7 +50,7 @@ class FunctionsFlow {
 	async sendFile({
 		filePath = { url: '' },
 		fileName,
-		options = { reply: false, type: 'document', caption: '' },
+		options = { reply: false, type: 'document', caption: '', ptt: false },
 	}) {
 		const finalOptions = {};
 		if (options.reply) finalOptions.quoted = this.msg;
@@ -96,6 +96,13 @@ class FunctionsFlow {
 				mimetype: mimeType,
 				fileName: newFileName,
 			};
+		} else if (type === 'audio') {
+			messageContent = {
+				audio: fileSource,
+				mimetype: mimeType,
+				ptt: options.ptt ?? false,
+				fileName: newFileName,
+			};
 		} else {
 			messageContent = {
 				document: fileSource,
@@ -105,95 +112,6 @@ class FunctionsFlow {
 		}
 
 		await this.sock.sendMessage(this.remoteJid, messageContent, finalOptions);
-
-		////////
-		///////
-		// const mimeType = mime.lookup(filePath);
-		// const fileName = filePath.split('/').pop();
-
-		// const toReadable = (buffer) => {
-		// 	const readable = new Readable({ read: () => {} });
-		// 	readable.push(buffer);
-		// 	readable.push(null);
-		// 	return readable;
-		// };
-		// const toBuffer = (streamd) => {
-		// 	return new Promise((resolve) => {
-		// 		const chunks = [];
-		// 		// for await (const chunk of stream) {
-		// 		// 	chunks.push(chunk);
-		// 		// }
-		// 		streamd().then((videoStream) => {
-		// 			videoStream.on('data', (chunk) => {
-		// 				chunks.push(chunk);
-		// 				console.log('Recibido chunk de datos:', chunk.length);
-		// 			});
-		// 			videoStream.on('end', () => {
-		// 				console.log('Stream finalizado.');
-
-		// 				// videoStream.destroy();
-		// 				resolve(Buffer.concat(chunks));
-		// 			});
-		// 		});
-		// 	});
-		// };
-
-		// toBuffer(filePath)
-		// 	.then(async (fileBuffer) => {
-		// 		console.log('llgo toBuffer');
-		// 		await this.sock.sendMessage(this.remoteJid, {
-		// 			document: { stream: fileBuffer },
-		// 			mimetype: 'video/mp4',
-		// 			fileName: 'dinuo.mp4',
-		// 		});
-		// 	})
-		// 	.catch((error) => {
-		// 		console.error('Error al convertir el stream a buffer:', error);
-		// 	});
-
-		// async function* asyncIterable(stream) {
-		// 	for await (const chunk of stream) {
-		// 		yield chunk;
-		// 	}
-		// }
-
-		// const asyncIterableStream = toAsyncIterator(filePath);
-
-		// let fileBuffer = await toBuffer(filePath);
-		// filePath().then(async (videoStream) => {
-		// 	await this.sock.sendMessage(this.remoteJid, {
-		// 		// video: { stream: await toBuffer(filePath) },
-		// 		document: { stream: videoStream },
-		// 		// document: { stream: fileBuffer },
-		// 		// document: fileBuffer,
-		// 		mimetype: 'video/mp4',
-		// 		fileName: 'dinuo.mp4',
-		// 	});
-		// });
-		////////
-		///////
-		// console.log(' llego a sendFile');
-		// filePath().then(async (videoStream) => {
-		// 	// const fileBuffer = fs.readFileSync('./checkFolder/videogarden.mp4');
-		// 	console.log(' llgo then');
-		// 	console.log('videoStream', videoStream);
-		// 	// console.log(fileBuffer);
-		// 	await this.sock.sendMessage(this.remoteJid, {
-		// 		// video: { stream: await toBuffer(filePath) },
-		// 		document: { stream: videoStream },
-		// 		// document: { stream: fileBuffer },
-		// 		// document: fileBuffer,
-		// 		mimetype: 'video/mp4',
-		// 		fileName: 'dinuo.mp4',
-		// 	});
-		// });
-		//////
-
-		// await this.sock.sendMessage(this.remoteJid, {
-		//     document: { url: filePath },
-		//     mimetype: mimeType,
-		//     fileName: fileName,
-		// })
 	}
 
 	async sendSticker({ filePath, options = { reply: false } }) {
