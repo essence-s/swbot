@@ -1,4 +1,4 @@
-import { DW } from './dw/dw.js';
+import { DW } from './dw/dw.ts';
 // import { INFO } from './info.js';
 import { MEME } from './meme.js';
 import { SYT } from './syt/syt.ts';

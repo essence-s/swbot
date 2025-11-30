@@ -571,10 +571,12 @@ const deleteFile = (files: string[]) => {
 };
 
 export type CliArgDef = { name: string; required?: boolean };
-export type CliFlagDef =
-	| { name: string; alias: string; type: 'boolean' }
-	| { name: string; alias: string; type: 'string' | 'number'; value?: any };
-
+export type CliFlagDef = {
+	name: string;
+	alias: string;
+	type: 'boolean' | 'string' | 'number';
+	value?: any;
+};
 export type CliConfig = {
 	name: string;
 	args?: CliArgDef[];

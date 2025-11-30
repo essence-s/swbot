@@ -1,12 +1,13 @@
+import type { Command } from '../../lbSbot/types/command.ts';
 import {
 	deleteFile,
 	parseCLI,
 	downloadVideoS,
 	isFileUnderSizeLimit,
 } from '../../utils.ts';
-import { config } from './config.js';
+import { config } from './config.ts';
 
-export const DW = {
+export const DW: Command = {
 	invo: '.dw',
 	shortDescription:
 		'Descarga videos o audios fácilmente con diferentes formatos y calidades.',
@@ -35,7 +36,7 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 		// const message = ctx.messages[0].message.conversation;
 
 		try {
-			const parsed = parseCLI(message, config);
+			const parsed: any = parseCLI(message, config);
 			// const result = {
 			// 	command: '.dw',
 			// 	args: { url: 'https://youtube.com' },
@@ -63,7 +64,7 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 			} else if (message.includes('dino')) {
 				redirectToSubflow('search');
 			}
-		} catch (err) {
+		} catch (err: any) {
 			console.error('Error:', err.message);
 		}
 	},
@@ -116,13 +117,15 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 					// descarga y devuelve la ubicacion del video descargado
 					let pathVideo = '';
 					const resolution = flagsOptions.resolution || '720'; // por defecto 720
-					const audioOnly = flagsOptions.format === 'mp3'; // si el formato es mp3, solo descarga el audio
+					const wantsMp3 = flagsOptions.format === 'mp3'; // si el formato es mp3, solo descarga el audio
+					const wantsMp4 = flagsOptions.format === 'mp4';
+					const forceFile = flagsOptions.fileMode === true;
 
 					try {
 						pathVideo = await downloadVideoS({
 							url: urlVideo,
 							resolution,
-							audioOnly,
+							audioOnly: wantsMp3,
 							allowLowerQuality: true,
 							onProgress: (progress) => {
 								// console.log(progress);
@@ -167,10 +170,18 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 					const isUnderLimit = await isFileUnderSizeLimit(pathVideo);
 					// si el archivo es menor a 100MB
 					// se esta subiendo el archivo que sera la respuesta del mensaje "reply"
-					if (isUnderLimit && !audioOnly) {
+					if (forceFile) {
+						await sendFile({ filePath: pathVideo, options: { reply: true } });
+					} else if (isUnderLimit && wantsMp4) {
 						await sendFile({
 							filePath: pathVideo,
 							options: { reply: true, type: 'video' },
+						});
+						console.log('File is under 100MB. Sent as video.');
+					} else if (isUnderLimit && wantsMp3) {
+						await sendFile({
+							filePath: pathVideo,
+							options: { reply: true, type: 'audio', ptt: false },
 						});
 						console.log('File is under 100MB. Sent as video.');
 					} else {
@@ -184,7 +195,7 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 					// actualizar el mensaje de decarga y procesamiento terminada
 					await updateMessage({
 						text: `✅ ${
-							audioOnly ? 'Audio' : 'Video'
+							wantsMp3 ? 'Audio' : 'Video'
 						} descargado y enviado correctamente. [▓▓▓▓▓▓▓▓▓▓] 100%`,
 						key: msg.key,
 					});
