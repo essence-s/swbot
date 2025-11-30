@@ -1,6 +1,7 @@
 export interface CommandContext {
 	msg: any;
 	messages: any[];
+	data: any;
 }
 export interface ExecuteParams {
 	ctx: CommandContext;
@@ -17,7 +18,12 @@ export interface ExecuteParams {
 	sendFile: (args: {
 		filePath: string | { url: string };
 		fileName?: string;
-		options?: { reply?: boolean; type?: string; caption?: string };
+		options?: {
+			reply?: boolean;
+			type?: string;
+			caption?: string;
+			ptt?: boolean;
+		};
 	}) => Promise<any>;
 
 	sendSticker: (args: {
