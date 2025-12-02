@@ -8,10 +8,13 @@
 		"start": "node app.ts"
 	},
 	"dependencies": {
-		"@distube/ytdl-core": "^4.16.11",
-		"baileys": "^6.7.21",
+		"@distube/ytdl-core": "^4.16.12",
+		"@hapi/boom": "^10.0.1",
+		"baileys": "7.0.0-rc.9",
+		"mime-types": "^3.0.2",
+		"pino": "^10.1.0",
 		"qrcode-terminal": "^0.12.0",
-		"youtube-search-api": "^2.0.0",
+		"youtube-search-api": "^2.0.1",
 		"youtubei.js": "^15.1.1"
 	},
 	"author": "",
