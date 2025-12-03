@@ -33,7 +33,7 @@ class Connectbaileys {
 		const sock = makeWASocket({
 			// can provide additional config here
 			// printQRInTerminal: true,
-			version: [2, 3000, 1025190524],
+			// version: [2, 3000, 1025190524],
 			auth: state,
 			logger: log({ level: 'silent' }),
 		});
@@ -75,7 +75,9 @@ class Connectbaileys {
 			// console.dir(m, { depth: null });
 
 			// comment
-			if (m.messages[0]?.key.fromMe) return console.log('no entra');
+			// if (m.messages[0]?.key.fromMe) return console.log('no entra');
+			if (!m.messages[0]?.key.participant && m.messages[0]?.key.fromMe)
+				return console.log('no entra');
 
 			let remoteJid = m.messages[0].key.remoteJid;
 			// En grupos, el remitente real está en `key.participant`.
