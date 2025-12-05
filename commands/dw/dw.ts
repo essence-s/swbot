@@ -117,8 +117,10 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 					// descarga y devuelve la ubicacion del video descargado
 					let pathVideo = '';
 					const resolution = flagsOptions.resolution || '720'; // por defecto 720
-					const wantsMp3 = flagsOptions.format === 'mp3'; // si el formato es mp3, solo descarga el audio
-					const wantsMp4 = flagsOptions.format === 'mp4';
+					const format = flagsOptions.format;
+					const wantsMp3 = format === 'mp3'; // si el formato es mp3, solo descarga el audio
+					const wantsMp4 = format === 'mp4' || (!wantsMp3 && format == null);
+
 					const forceFile = flagsOptions.fileMode === true;
 
 					try {
