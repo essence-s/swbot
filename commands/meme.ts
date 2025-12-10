@@ -1,4 +1,6 @@
-export const MEME = {
+import type { Command } from '../lbSbot/types/command';
+
+export const MEME: Command = {
 	invo: '.mm',
 	description: 'envia un meme aleatorio',
 	shortDescription: 'envia un meme aleatorio',
@@ -14,7 +16,7 @@ export const MEME = {
 				action: async ({ ctx, sendMessage, sendFile }) => {
 					let message = ctx.messages[0].message.conversation;
 
-					const getRandomMeme = () => {
+					const getRandomMeme = (): Promise<string> => {
 						return fetch('https://meme-api.com/gimme/MexicoMemes')
 							.then((response) => response.json())
 							.then((data) => {
