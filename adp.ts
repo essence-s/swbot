@@ -1,16 +1,22 @@
-type DATA_SAVE = {
+type DataSave = {
 	pushName: string;
-	dataSaveSearch: { videoId: string; title: string; imgVideo: string }[];
+	dataSaveSearch: {
+		videoId: string;
+		title: string;
+		imgVideo: string;
+		videoUrl: string;
+	}[];
 	dataQualitys: any;
 	dataOptions: any;
 	selectedVideoInfo: {
 		videoId: string;
 		title: string;
 		imgVideo: string;
+		videoUrl: string;
 	};
 	status: any;
 };
-let dataSaveArray: DATA_SAVE[] = [];
+let dataSaveArray: DataSave[] = [];
 
 const saveData = (idName: string, dataFuction: any) => {
 	let indice = dataSaveArray.findIndex((d) => d.pushName == idName);
