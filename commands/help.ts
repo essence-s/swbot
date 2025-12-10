@@ -1,9 +1,9 @@
+import { Command } from '../lbSbot/types/command.ts';
 import { DW } from './dw/dw.ts';
-// import { INFO } from './info.js';
 import { MEME } from './meme.js';
 import { SYT } from './syt/syt.ts';
 
-export const HELP = {
+export const HELP: Command = {
 	invo: '.help',
 	shortDescription: 'Muestra informacion de todos los comandos',
 	description: 'Muestra informacion de todos los comandos',
