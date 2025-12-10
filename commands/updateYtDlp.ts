@@ -1,6 +1,7 @@
+import type { Command } from '../lbSbot/types/command.ts';
 import { updateYtDlp } from '../utils.ts';
 
-export const UPDATEYTDLP = {
+export const UPDATEYTDLP: Command = {
 	invo: '.uytdlp',
 	description: 'Actualiza yt-dlp a la ultima version',
 	shortDescription: 'Actualiza yt-dlp a la ultima version',
@@ -18,7 +19,7 @@ export const UPDATEYTDLP = {
 					let updated = '';
 					try {
 						updated = await updateYtDlp();
-					} catch (e) {
+					} catch (e: any) {
 						updated = `Ocurrio un error al actualizar yt-dlp: ${e.message}`;
 					}
 
