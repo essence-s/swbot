@@ -14,7 +14,7 @@ import {
 	loadTexts,
 } from '../../utils.ts';
 
-import { addSeletedVideoInfo, getDataUser, saveData } from '../../adp.js';
+import { addSeletedVideoInfo, getDataUser, saveData } from '../../adp.ts';
 import type { Command } from '../../lbSbot/types/command.ts';
 
 const texts = await loadTexts(
@@ -96,7 +96,9 @@ export const SYT: Command = {
 						};
 					});
 
-					let url = getDataUser(pushName).selectedVideoInfo.videoId;
+					let url = getDataUser(pushName)?.selectedVideoInfo.videoId;
+
+					if (!url) return console.log('no url');
 
 					if (evaluated.mode == 1) {
 						// const msg = await sendMessage({
@@ -159,7 +161,9 @@ export const SYT: Command = {
 					if (message.toLowerCase() == 'exit')
 						return endFlow({ text: 'saliste 🏃‍♀️' });
 					let dataUser = getDataUser(pushName);
-					let cantVideos = dataUser.dataQualitys.length;
+					if (!dataUser) return console.log('no data user');
+
+					let cantVideos = dataUser?.dataQualitys.length;
 					const createArrayNum = (num: number) => {
 						let arrayOptinosLengthVideos = [];
 						for (let i = 1; i <= num; i++) {
