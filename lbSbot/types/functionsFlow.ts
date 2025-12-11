@@ -3,6 +3,8 @@ export type SendMessage = (args: {
 	options?: { reply?: boolean };
 }) => Promise<any>;
 
+export type DeleteMessage = (args: { key: any }) => Promise<any>;
+
 export type RedirectToSubflow = (name: string) => void;
 
 export type FallBack = () => Promise<void>;
