@@ -1,7 +1,7 @@
-type User = {
-	flowCurrent: string;
-	currentSection: number;
-	nameSubFlow: string;
+export type User = {
+	flowCurrent?: string;
+	currentSection?: number;
+	nameSubFlow?: string;
 	isProcessing?: boolean;
 };
 
@@ -36,7 +36,7 @@ const saveCurretSection = (
 	let user = users[userId];
 
 	console.log(flowLength);
-	if (user) {
+	if (user && user.currentSection) {
 		console.log(user.currentSection >= flowLength - 1);
 		if (user.currentSection >= flowLength - 1) {
 			user.currentSection = 0;
