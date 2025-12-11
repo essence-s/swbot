@@ -1,4 +1,13 @@
-const users = {
+type User = {
+	flowCurrent: string;
+	currentSection: number;
+	nameSubFlow: string;
+	isProcessing?: boolean;
+};
+
+type UserId = string | number;
+
+const users: Record<UserId, User> = {
 	987654321: {
 		flowCurrent: '',
 		currentSection: 0,
@@ -7,20 +16,24 @@ const users = {
 	},
 };
 
-function isProcessing(userId) {
+function isProcessing(userId: string) {
 	return users[userId]?.isProcessing;
 }
 
-const startProcessing = (userId) => {
+const startProcessing = (userId: string) => {
 	users[userId].isProcessing = true;
 };
 
-const stopProcessing = (userId) => {
+const stopProcessing = (userId: string) => {
 	users[userId].isProcessing = false;
 };
 
-const saveCurretSection = (number, nameSubFlow, flowLength) => {
-	let user = users[number];
+const saveCurretSection = (
+	userId: string,
+	nameSubFlow: string,
+	flowLength: number
+) => {
+	let user = users[userId];
 
 	console.log(flowLength);
 	if (user) {
@@ -34,13 +47,13 @@ const saveCurretSection = (number, nameSubFlow, flowLength) => {
 		user.currentSection = user.currentSection + 1;
 		user.nameSubFlow = nameSubFlow;
 	} else {
-		users[number] = { currentSection: 0, flowCurrent: '', nameSubFlow: '' };
+		users[userId] = { currentSection: 0, flowCurrent: '', nameSubFlow: '' };
 	}
 	// return users
 };
 
-const setNameSubFlow = (number, nameSubFlow) => {
-	let user = users[number];
+const setNameSubFlow = (userId: string, nameSubFlow: string) => {
+	let user = users[userId];
 	if (user) {
 		user.nameSubFlow = nameSubFlow;
 	} else {
@@ -48,16 +61,16 @@ const setNameSubFlow = (number, nameSubFlow) => {
 	}
 };
 
-const stableCurrent = (number) => {
-	let user = users[number];
+const stableCurrent = (userId: string) => {
+	let user = users[userId];
 
 	if (!user) {
-		users[number] = { currentSection: 0, flowCurrent: '', nameSubFlow: '' };
+		users[userId] = { currentSection: 0, flowCurrent: '', nameSubFlow: '' };
 	}
 };
 
-const getCurrent = (number) => {
-	let user = users[number];
+const getCurrent = (userId: string) => {
+	let user = users[userId];
 	return user;
 };
 

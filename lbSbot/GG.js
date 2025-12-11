@@ -20,7 +20,7 @@ import {
 	startProcessing,
 	stopProcessing,
 	isProcessing,
-} from './users.js';
+} from './users.ts';
 
 class Connectbaileys {
 	vendor;
