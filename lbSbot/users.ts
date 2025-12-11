@@ -36,7 +36,7 @@ const saveCurretSection = (
 	let user = users[userId];
 
 	console.log(flowLength);
-	if (user && user.currentSection) {
+	if (user && user.currentSection !== undefined) {
 		console.log(user.currentSection >= flowLength - 1);
 		if (user.currentSection >= flowLength - 1) {
 			user.currentSection = 0;
