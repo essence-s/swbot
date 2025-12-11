@@ -1,12 +1,42 @@
-import mime from 'mime-types';
 import fs from 'fs';
-import { Readable } from 'stream';
+import mime from 'mime-types';
 import path from 'path';
-import { url } from 'inspector';
+import {
+	DeleteMessage,
+	EndFlow,
+	FallBack,
+	SendFile,
+	SendMessage,
+	SendSticker,
+	UpdateMessage,
+} from './types/functionsFlow';
+import { User } from './users';
+import { Command, SubFlowStep } from './types/command';
 // const toAsyncIterator = require('stream-to-async-iterator');
 
+type FinalOptions = {
+	quoted?: string;
+};
+
+type Sock = {
+	sendMessage: (jid: string, content: any, options?: any) => Promise<any>;
+};
+
+type FilePath = string | { url: string };
+
 class FunctionsFlow {
-	constructor(sock, remoteJid, msg) {
+	sock: Sock;
+	remoteJid: string;
+	msg: any;
+
+	dataUser: User;
+	flow: Partial<Command> = {};
+	statusFallBack: boolean;
+
+	subFlow: SubFlowStep[];
+	nameSubFlow: string;
+
+	constructor(sock: Sock, remoteJid: string, msg: any) {
 		this.sock = sock;
 		this.remoteJid = remoteJid;
 		this.msg = msg;
@@ -19,9 +49,9 @@ class FunctionsFlow {
 		this.nameSubFlow = '';
 	}
 
-	async sendMessage({ text, options = { reply: false } }) {
+	sendMessage: SendMessage = async ({ text, options = { reply: false } }) => {
 		// console.log(this.statusFallBack)
-		const finalOptions = {};
+		const finalOptions: FinalOptions = {};
 		if (options.reply) finalOptions.quoted = this.msg;
 
 		return await this.sock.sendMessage(
@@ -29,30 +59,30 @@ class FunctionsFlow {
 			{ text: text },
 			finalOptions
 		);
-	}
+	};
 
-	async deleteMessage({ key }) {
+	deleteMessage: DeleteMessage = async ({ key }) => {
 		if (!key) {
 			throw new Error('Key is required to delete a message');
 		}
 
 		return await this.sock.sendMessage(this.remoteJid, { delete: key });
-	}
+	};
 
-	async updateMessage({ text, key }) {
+	updateMessage: UpdateMessage = async ({ text, key }) => {
 		if (!key) {
 			throw new Error('Key is required to update a message');
 		}
 
 		return await this.sock.sendMessage(this.remoteJid, { text, edit: key });
-	}
+	};
 
-	async sendFile({
+	sendFile: SendFile = async ({
 		filePath = { url: '' },
 		fileName,
 		options = { reply: false, type: 'document', caption: '', ptt: false },
-	}) {
-		const finalOptions = {};
+	}) => {
+		const finalOptions: FinalOptions = {};
 		if (options.reply) finalOptions.quoted = this.msg;
 
 		if (!filePath) {
@@ -112,10 +142,13 @@ class FunctionsFlow {
 		}
 
 		await this.sock.sendMessage(this.remoteJid, messageContent, finalOptions);
-	}
+	};
 
-	async sendSticker({ filePath, options = { reply: false } }) {
-		const finalOptions = {};
+	sendSticker: SendSticker = async ({
+		filePath,
+		options = { reply: false },
+	}) => {
+		const finalOptions: FinalOptions = {};
 		if (options.reply) finalOptions.quoted = this.msg;
 
 		const mimeType = mime.lookup(filePath);
@@ -128,42 +161,47 @@ class FunctionsFlow {
 			},
 			finalOptions
 		);
-	}
+	};
 
-	async endFlow({ text }) {
+	endFlow: EndFlow = async ({ text }) => {
 		this.dataUser.currentSection = 0;
 		this.dataUser.flowCurrent = '';
 		await this.sendMessage({ text });
 		this.changeFallback(true);
-	}
+	};
 
-	async fallBack() {
+	fallBack: FallBack = async () => {
 		let currentSection = this.dataUser.currentSection;
-		await this.sendMessage({ text: this.subFlow[currentSection].word });
-		this.changeFallback(true);
-	}
+		if (!currentSection) return console.log('current Section no encontrado');
 
-	changeFallback(dataBolean) {
+		const word = this.subFlow[currentSection].word;
+		if (!word) return console.log('current Section no encontrado');
+
+		await this.sendMessage({ text: word });
+		this.changeFallback(true);
+	};
+
+	changeFallback(dataBolean: boolean) {
 		this.statusFallBack = dataBolean;
 	}
 
-	addDataUser(data) {
+	addDataUser(data: User) {
 		this.dataUser = data;
 	}
 
-	addFlow(data) {
-		this.flow = data;
+	addFlow(flow: Command) {
+		this.flow = flow;
 	}
 
-	addSubFlow(data) {
-		this.subFlow = data;
+	addSubFlow(subFlow: SubFlowStep[]) {
+		this.subFlow = subFlow;
 	}
 
-	redirectToSubflow(nameSubFlow) {
+	redirectToSubflow(nameSubFlow: string) {
 		// this.subFlow = this.flow.subFlows[subFlow];
 		// console.dir(this.flow, { depth: null });
 		this.nameSubFlow = nameSubFlow;
-		if (!this.subFlow) {
+		if (!this.subFlow && 'invo' in this.flow) {
 			throw new Error(
 				`Subflow ${nameSubFlow} not found in flow ${this.flow.invo}`
 			);
