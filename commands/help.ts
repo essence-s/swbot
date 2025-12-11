@@ -1,6 +1,6 @@
-import { Command } from '../lbSbot/types/command.ts';
+import type { Command } from '../lbSbot/types/command.ts';
 import { DW } from './dw/dw.ts';
-import { MEME } from './meme.js';
+import { MEME } from './meme.ts';
 import { SYT } from './syt/syt.ts';
 
 export const HELP: Command = {

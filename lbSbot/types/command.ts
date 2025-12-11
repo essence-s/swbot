@@ -1,4 +1,4 @@
-import {
+import type {
 	EndFlow,
 	FallBack,
 	RedirectToSubflow,
@@ -6,7 +6,7 @@ import {
 	SendMessage,
 	SendSticker,
 	UpdateMessage,
-} from './functionsFlow';
+} from './functionsFlow.ts';
 
 export interface CommandContext {
 	msg: any;

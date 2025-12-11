@@ -1,7 +1,7 @@
 import fs from 'fs';
 import mime from 'mime-types';
 import path from 'path';
-import {
+import type {
 	DeleteMessage,
 	EndFlow,
 	FallBack,
@@ -9,9 +9,9 @@ import {
 	SendMessage,
 	SendSticker,
 	UpdateMessage,
-} from './types/functionsFlow';
-import { User } from './users';
-import { Command, SubFlowStep } from './types/command';
+} from './types/functionsFlow.ts';
+import type { User } from './users.ts';
+import type { Command, SubFlowStep } from './types/command.ts';
 // const toAsyncIterator = require('stream-to-async-iterator');
 
 type FinalOptions = {

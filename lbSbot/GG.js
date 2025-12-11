@@ -11,7 +11,7 @@ import { Boom } from '@hapi/boom';
 import pino from 'pino';
 const log = pino;
 
-import { FunctionsFlow } from './functionsFlow.js';
+import { FunctionsFlow } from './functionsFlow.ts';
 import {
 	getCurrent,
 	saveCurretSection,
