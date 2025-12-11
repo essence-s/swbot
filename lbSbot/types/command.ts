@@ -1,3 +1,13 @@
+import {
+	EndFlow,
+	FallBack,
+	RedirectToSubflow,
+	SendFile,
+	SendMessage,
+	SendSticker,
+	UpdateMessage,
+} from './functionsFlow';
+
 export interface CommandContext {
 	msg: any;
 	messages: any[];
@@ -5,31 +15,13 @@ export interface CommandContext {
 }
 export interface ExecuteParams {
 	ctx: CommandContext;
-	sendMessage: (args: {
-		text: string;
-		options?: { reply?: boolean };
-	}) => Promise<any>;
-	redirectToSubflow: (name: string) => void;
-
-	fallBack: () => Promise<void>;
-	updateMessage: (args: { text: string; key: any }) => Promise<any>;
-	endFlow: (args: { text: string }) => Promise<void>;
-
-	sendFile: (args: {
-		filePath: string | { url: string };
-		fileName?: string;
-		options?: {
-			reply?: boolean;
-			type?: string;
-			caption?: string;
-			ptt?: boolean;
-		};
-	}) => Promise<any>;
-
-	sendSticker: (args: {
-		filePath: string;
-		options?: { reply?: boolean };
-	}) => Promise<any>;
+	sendMessage: SendMessage;
+	redirectToSubflow: RedirectToSubflow;
+	fallBack: FallBack;
+	updateMessage: UpdateMessage;
+	endFlow: EndFlow;
+	sendFile: SendFile;
+	sendSticker: SendSticker;
 }
 
 export type CommandAction = (params: ExecuteParams) => any | Promise<any>;
