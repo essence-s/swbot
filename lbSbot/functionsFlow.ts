@@ -29,7 +29,7 @@ class FunctionsFlow {
 	remoteJid: string;
 	msg: any;
 
-	dataUser: User;
+	dataUser: Partial<User> = {};
 	flow: Partial<Command> = {};
 	statusFallBack: boolean;
 

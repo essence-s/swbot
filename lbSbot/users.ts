@@ -1,7 +1,7 @@
 export type User = {
-	flowCurrent?: string;
-	currentSection?: number;
-	nameSubFlow?: string;
+	flowCurrent: string;
+	currentSection: number;
+	nameSubFlow: string;
 	isProcessing?: boolean;
 };
 
