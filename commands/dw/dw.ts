@@ -27,16 +27,16 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 `,
 	onImmediateExecute: async ({
 		ctx,
+		messageText,
+		data: dataUser,
 		sendMessage,
 		endFlow,
 		redirectToSubflow,
 	}) => {
-		let message = ctx.messages[0].message.conversation;
-
 		// const message = ctx.messages[0].message.conversation;
 
 		try {
-			const parsed: any = parseCLI(message, config);
+			const parsed: any = parseCLI(messageText, config);
 			// const result = {
 			// 	command: '.dw',
 			// 	args: { url: 'https://youtube.com' },
@@ -56,12 +56,12 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 					// urlVideo: match[0],
 					parsed,
 				};
-				ctx.data = data;
+				dataUser = data;
 				console.log(match[0]);
 				redirectToSubflow('fastDownload');
 
 				// redireccion
-			} else if (message.includes('dino')) {
+			} else if (messageText.includes('dino')) {
 				redirectToSubflow('search');
 			}
 		} catch (err: any) {
@@ -82,9 +82,8 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 		],
 		search: [
 			{
-				action: async ({ ctx, sendMessage, endFlow }) => {
-					let message = ctx.messages[0].message.conversation;
-					sendMessage({ text: `buscando video. ${message}` });
+				action: async ({ ctx, sendMessage, endFlow, messageText }) => {
+					sendMessage({ text: `buscando video. ${messageText}` });
 				},
 			},
 		],
@@ -92,15 +91,15 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 			{
 				action: async ({
 					ctx,
+					data: dataUser,
 					sendMessage,
 					sendFile,
 					sendSticker,
 					updateMessage,
 					endFlow,
 				}) => {
-					let message = ctx.messages[0].message.conversation;
-					let urlVideo = ctx.data.parsed.args.url;
-					let flagsOptions = ctx.data.parsed.options;
+					let urlVideo = dataUser.parsed.args.url;
+					let flagsOptions = dataUser.parsed.options;
 
 					// envio de sticker de descargando
 					// await sendSticker({
