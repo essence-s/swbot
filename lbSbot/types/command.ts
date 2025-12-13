@@ -17,6 +17,9 @@ export interface CommandContext {
 }
 export interface ExecuteParams {
 	ctx: BaileysEventMap['messages.upsert'];
+	messageText: string;
+	data: any;
+
 	sendMessage: SendMessage;
 	redirectToSubflow: RedirectToSubflow;
 	fallBack: FallBack;
