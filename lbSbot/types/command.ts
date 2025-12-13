@@ -1,4 +1,6 @@
+import { BaileysEventMap } from 'baileys';
 import type {
+	DeleteMessage,
 	EndFlow,
 	FallBack,
 	RedirectToSubflow,
@@ -14,11 +16,12 @@ export interface CommandContext {
 	data: any;
 }
 export interface ExecuteParams {
-	ctx: CommandContext;
+	ctx: BaileysEventMap['messages.upsert'];
 	sendMessage: SendMessage;
 	redirectToSubflow: RedirectToSubflow;
 	fallBack: FallBack;
 	updateMessage: UpdateMessage;
+	deleteMessage: DeleteMessage;
 	endFlow: EndFlow;
 	sendFile: SendFile;
 	sendSticker: SendSticker;
