@@ -28,6 +28,7 @@ import {
 	startProcessing,
 	stopProcessing,
 	isProcessing,
+	User,
 } from './users.ts';
 import type { Command, SubFlowStep } from './types/command.ts';
 import { WebSocketClient } from 'baileys/lib/Socket/Client/websocket';
@@ -156,7 +157,8 @@ class Connectbaileys {
 							subFlow,
 							m,
 							functionsFlow,
-							flowCurrent9.nameSubFlow
+							flowCurrent9.nameSubFlow,
+							messageText
 						);
 						// console.log('1', users)
 						stopProcessing(numberT);
@@ -174,7 +176,13 @@ class Connectbaileys {
 								remoteJid,
 								messageObject
 							);
-							let nameSubFlow = await LL2(flow, m, functionsFlow2);
+							let nameSubFlow = await LL2(
+								flow,
+								m,
+								functionsFlow2,
+								messageText,
+								flowCurrent9
+							);
 							console.log(nameSubFlow);
 
 							if (!nameSubFlow) {
@@ -205,7 +213,14 @@ class Connectbaileys {
 								functionsFlow.addDataUser(flowCurrent9);
 								functionsFlow.addFlow(flow);
 								functionsFlow.addSubFlow(newSubFlow);
-								await LL(numberT, newSubFlow, m, functionsFlow, nameSubFlow);
+								await LL(
+									numberT,
+									newSubFlow,
+									m,
+									functionsFlow,
+									nameSubFlow,
+									messageText
+								);
 								stopProcessing(numberT);
 							}
 						}
@@ -221,12 +236,16 @@ const LL = async (
 	newSubFlow: SubFlowStep[],
 	m: BaileysEventMap['messages.upsert'],
 	functionsFlow: FunctionsFlow,
-	nameSubFlow: string
+	nameSubFlow: string,
+	messageText: string
 ) => {
-	let sectionFunction = getCurrent(numberT).currentSection;
+	let user = getCurrent(numberT);
+	let sectionFunction = user.currentSection;
 
 	await newSubFlow[sectionFunction].action({
 		ctx: m,
+		messageText: messageText,
+		data: user,
 		sendMessage: (...args) => functionsFlow.sendMessage(...args),
 		sendFile: (...args) => functionsFlow.sendFile(...args),
 		endFlow: (...args) => functionsFlow.endFlow(...args),
@@ -247,7 +266,14 @@ const LL = async (
 				saveCurretSection(numberT, nameSubFlow, newSubFlow.length);
 			} else {
 				saveCurretSection(numberT, nameSubFlow, newSubFlow.length);
-				await LL(numberT, newSubFlow, m, functionsFlow, nameSubFlow);
+				await LL(
+					numberT,
+					newSubFlow,
+					m,
+					functionsFlow,
+					nameSubFlow,
+					messageText
+				);
 			}
 
 			// await functionsFlow.sendMessage(newSubFlow[sectionFunction + 1].word);
@@ -261,11 +287,16 @@ const LL = async (
 const LL2 = async (
 	flow: Command,
 	m: BaileysEventMap['messages.upsert'],
-	functionsFlow: FunctionsFlow
+	functionsFlow: FunctionsFlow,
+	messageText: string,
+	user: User
 ) => {
 	if (!flow.onImmediateExecute) return;
 	await flow.onImmediateExecute({
 		ctx: m,
+		messageText: messageText,
+		data: user,
+
 		sendMessage: (...args) => functionsFlow.sendMessage(...args),
 		sendFile: (...args) => functionsFlow.sendFile(...args),
 		endFlow: (...args) => functionsFlow.endFlow(...args),
