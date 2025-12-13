@@ -34,14 +34,14 @@ export const SYT: Command = {
 		search: [
 			{
 				word: texts.steps[0],
-				action: async ({ ctx, sendMessage, endFlow }) => {
-					let message = ctx.messages[0].message.conversation;
+				action: async ({ ctx, sendMessage, endFlow, messageText }) => {
 					let pushName = ctx.messages[0].pushName;
+					if (!pushName) return console.log('no existe el pushName');
 
-					if (message.toLowerCase() == 'exit')
+					if (messageText.toLowerCase() == 'exit')
 						return endFlow({ text: 'saliste 🏃‍♀️' });
 
-					let { items } = await getDataSearch(`${message}`, 5);
+					let { items } = await getDataSearch(`${messageText}`, 5);
 					let parsedData = parseSearchData(items);
 
 					saveData(pushName, (dataAct: any) => {
@@ -62,16 +62,17 @@ export const SYT: Command = {
 				word: texts.steps[1],
 				action: async ({
 					ctx,
+					messageText,
 					sendMessage,
 					fallBack,
 					updateMessage,
 					endFlow,
 				}) => {
-					let message = ctx.messages[0].message.conversation;
 					let pushName = ctx.messages[0].pushName;
-					if (message.toLowerCase() == 'exit')
+					if (!pushName) return console.log('no existe el pushName');
+					if (messageText.toLowerCase() == 'exit')
 						return endFlow({ text: 'saliste 🏃‍♀️' });
-					let optionsObject = parseStringValues(message);
+					let optionsObject = parseStringValues(messageText);
 
 					let evaluated = evalu(
 						optionsObject.option,
@@ -150,15 +151,16 @@ export const SYT: Command = {
 				word: texts.steps[2],
 				action: async ({
 					ctx,
+					messageText,
 					sendMessage,
 					sendFile,
 					sendSticker,
 					updateMessage,
 					endFlow,
 				}) => {
-					let message = ctx.messages[0].message.conversation;
 					let pushName = ctx.messages[0].pushName;
-					if (message.toLowerCase() == 'exit')
+					if (!pushName) return console.log('no existe el pushName');
+					if (messageText.toLowerCase() == 'exit')
 						return endFlow({ text: 'saliste 🏃‍♀️' });
 					let dataUser = getDataUser(pushName);
 					if (!dataUser) return console.log('no data user');
@@ -172,7 +174,7 @@ export const SYT: Command = {
 						return arrayOptinosLengthVideos;
 					};
 					let optionsObject = parseStringValues2(
-						message,
+						messageText,
 						createArrayNum(cantVideos)
 					);
 					let urlVideo = dataUser.selectedVideoInfo.videoUrl;
