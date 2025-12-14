@@ -7,16 +7,14 @@ export const HELP: Command = {
 	invo: '.help',
 	shortDescription: 'Muestra informacion de todos los comandos',
 	description: 'Muestra informacion de todos los comandos',
-	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
-		let message = ctx.messages[0].message.conversation;
-
+	onImmediateExecute: async ({}) => {
 		// redirectToSubflow('help');
 	},
 	// defaultSubFlow: 'help',
 	subFlows: {
 		help: [
 			{
-				action: async ({ ctx, sendMessage }) => {
+				action: async ({ sendMessage }) => {
 					// let message = ctx.messages[0].message.conversation;
 					const superDino = [HELP, DW, MEME, SYT];
 

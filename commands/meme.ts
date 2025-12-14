@@ -5,8 +5,6 @@ export const MEME: Command = {
 	description: 'envia un meme aleatorio',
 	shortDescription: 'envia un meme aleatorio',
 	onImmediateExecute: async ({ ctx, sendMessage, redirectToSubflow }) => {
-		let message = ctx.messages[0].message.conversation;
-
 		redirectToSubflow('meme');
 	},
 	defaultSubFlow: 'meme',
@@ -14,8 +12,6 @@ export const MEME: Command = {
 		meme: [
 			{
 				action: async ({ ctx, sendMessage, sendFile }) => {
-					let message = ctx.messages[0].message.conversation;
-
 					const getRandomMeme = (): Promise<string> => {
 						return fetch('https://meme-api.com/gimme/MexicoMemes')
 							.then((response) => response.json())
