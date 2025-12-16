@@ -1,4 +1,4 @@
-import { Connectbaileys } from './lbSbot/GG.js';
+import { Connectbaileys } from './lbSbot/GG.ts';
 
 import { DW } from './commands/dw/dw.ts';
 // import { INFO } from './commands/info.js';

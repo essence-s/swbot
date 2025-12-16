@@ -1,17 +1,5 @@
-// const {
-// 	default: makeWASocket,
-// 	DisconnectReason,
-// 	useMultiFileAuthState,
-// } = require('@whiskeysockets/baileys');
-import {
-	makeWASocket,
-	DisconnectReason,
-	useMultiFileAuthState,
-	SocketConfig,
-	UserFacingSocketConfig,
-	WASocket,
-	BaileysEventMap,
-} from 'baileys';
+import type { BaileysEventMap, WASocket } from 'baileys';
+import { DisconnectReason, makeWASocket, useMultiFileAuthState } from 'baileys';
 
 import qrcode from 'qrcode-terminal';
 
@@ -20,18 +8,17 @@ import pino from 'pino';
 const log = pino;
 
 import { FunctionsFlow } from './functionsFlow.ts';
+import type { Command, SubFlowStep } from './types/command.ts';
+import type { User } from './users.ts';
 import {
 	getCurrent,
+	isProcessing,
 	saveCurretSection,
-	stableCurrent,
 	setNameSubFlow,
+	stableCurrent,
 	startProcessing,
 	stopProcessing,
-	isProcessing,
-	User,
 } from './users.ts';
-import type { Command, SubFlowStep } from './types/command.ts';
-import { WebSocketClient } from 'baileys/lib/Socket/Client/websocket';
 
 class Connectbaileys {
 	vendor: any;
