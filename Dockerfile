@@ -1,4 +1,5 @@
 FROM node:23.11.0-alpine3.20 AS swbot
+ENV COREPACK_ENABLE_AUTO_PIN=0
 RUN corepack enable && corepack prepare pnpm@latest --activate
 WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
