@@ -1,9 +1,9 @@
 import type { Command } from '../../lbSbot/types/command.ts';
 import {
 	deleteFile,
-	parseCLI,
 	downloadVideoS,
 	isFileUnderSizeLimit,
+	parseCLI,
 } from '../../utils.ts';
 import { config } from './config.ts';
 
@@ -52,11 +52,7 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
 			const urlRegex = /https?:\/\/[^\s/$.?#].[^\s]*/gi;
 			const match = parsed?.args?.url?.match(urlRegex);
 			if (match) {
-				const data = {
-					// urlVideo: match[0],
-					parsed,
-				};
-				dataUser = data;
+				dataUser.parsed = parsed;
 				console.log(match[0]);
 				redirectToSubflow('fastDownload');
 
