@@ -228,11 +228,12 @@ const LL = async (
 ) => {
 	let user = getCurrent(numberT);
 	let sectionFunction = user.currentSection;
+	user.data = user.data || {};
 
 	await newSubFlow[sectionFunction].action({
 		ctx: m,
 		messageText: messageText,
-		data: user,
+		data: user.data,
 		sendMessage: (...args) => functionsFlow.sendMessage(...args),
 		sendFile: (...args) => functionsFlow.sendFile(...args),
 		endFlow: (...args) => functionsFlow.endFlow(...args),
@@ -279,10 +280,11 @@ const LL2 = async (
 	user: User
 ) => {
 	if (!flow.onImmediateExecute) return;
+	user.data = user.data || {};
 	await flow.onImmediateExecute({
 		ctx: m,
 		messageText: messageText,
-		data: user,
+		data: user.data,
 
 		sendMessage: (...args) => functionsFlow.sendMessage(...args),
 		sendFile: (...args) => functionsFlow.sendFile(...args),
