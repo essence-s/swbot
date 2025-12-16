@@ -3,6 +3,7 @@ export type User = {
 	currentSection: number;
 	nameSubFlow: string;
 	isProcessing?: boolean;
+	data?: any;
 };
 
 type UserId = string | number;
