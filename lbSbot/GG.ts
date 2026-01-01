@@ -98,9 +98,7 @@ class Connectbaileys {
 				// 	text: 'Ya hay algo en proceso, espere un momento',
 				// });
 
-				let otherMe1 = messageObject.message?.conversation;
-				let otherMe2 = messageObject.message?.extendedTextMessage?.text;
-				let messageText = otherMe1 || otherMe2;
+				const messageText = extractText(messageObject);
 				if (!messageText) return console.log('message not found');
 
 				if (!messageObject.message) return;
@@ -301,6 +299,10 @@ const LL2 = async (
 	if (!flow.subFlows) return console.log('no subFlow');
 	console.log('el default', Object.keys(flow.subFlows)[0]);
 	return flow.defaultSubFlow ?? Object.keys(flow.subFlows)[0] ?? null;
+};
+
+const extractText = (msg: any): string | null => {
+	return msg?.message?.conversation || msg?.message?.extendedTextMessage?.text;
 };
 
 export { Connectbaileys };
