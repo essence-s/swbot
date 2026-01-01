@@ -161,7 +161,7 @@ class Connectbaileys {
 								remoteJid,
 								messageObject
 							);
-							let nameSubFlow = await LL2(
+							let nameSubFlow = await handleImmediateExecution(
 								flow,
 								m,
 								functionsFlow2,
@@ -270,7 +270,7 @@ const handleSubflow = async (
 	}
 };
 
-const LL2 = async (
+const handleImmediateExecution = async (
 	flow: Command,
 	m: BaileysEventMap['messages.upsert'],
 	functionsFlow: FunctionsFlow,
