@@ -1,4 +1,4 @@
-import { exec, spawn } from 'child_process';
+import { exec, execFileSync, spawn } from 'child_process';
 import fs from 'fs';
 import fsPromises from 'fs/promises';
 import youtubesearchapi from 'youtube-search-api';
@@ -12,76 +12,87 @@ const __dirname = path.dirname(__filename);
 
 const isWindows = os.platform() === 'win32';
 
-const ytdlpPath = isWindows
-	? path.join(__dirname, 'bin', 'win', 'yt-dlp.exe')
-	: path.join(__dirname, 'bin', 'linux', 'yt-dlp');
+const localPath = isWindows
+  ? path.join(__dirname, 'bin', 'win', 'yt-dlp.exe')
+  : path.join(__dirname, 'bin', 'linux', 'yt-dlp');
+
+function canRun(file: any) {
+  try {
+    execFileSync(file, ['--version'], { stdio: 'ignore' });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+let ytdlpPath = canRun(localPath) ? localPath : 'yt-dlp';
 
 export type RawSearchItem = {
-	id: string;
-	title?: string;
-	thumbnail?: { thumbnails?: { url?: string }[] };
-	length?: { simpleText?: string } | string;
-	type?: string;
+  id: string;
+  title?: string;
+  thumbnail?: { thumbnails?: { url?: string }[] };
+  length?: { simpleText?: string } | string;
+  type?: string;
 };
 
 const getDataSearch = async (query: string, maxResults: number) => {
-	const resp = await youtubesearchapi.GetListByKeyword(
-		query,
-		false,
-		maxResults,
-		[{ type: 'video' }]
-	);
+  const resp = await youtubesearchapi.GetListByKeyword(
+    query,
+    false,
+    maxResults,
+    [{ type: 'video' }]
+  );
 
-	const videos = resp.items.filter((item) => item.type === 'video');
+  const videos = resp.items.filter((item) => item.type === 'video');
 
-	return { items: videos as RawSearchItem[] };
+  return { items: videos as RawSearchItem[] };
 };
 
 export type SearchResult = {
-	videoUrl: string;
-	videoId: string;
-	title: string;
-	imgVideo: string;
-	duration: string;
+  videoUrl: string;
+  videoId: string;
+  title: string;
+  imgVideo: string;
+  duration: string;
 };
 
 const parseSearchData = (arrayfromSearch: RawSearchItem[]): SearchResult[] => {
-	// console.dir(arrayfromSearch, { depth: null });
-	return arrayfromSearch.map((d) => {
-		let {
-			id = 'no-id',
-			title = 'Sin título',
-			thumbnail: { thumbnails = [{ url: '' }] } = {},
-		} = d;
+  // console.dir(arrayfromSearch, { depth: null });
+  return arrayfromSearch.map((d) => {
+    let {
+      id = 'no-id',
+      title = 'Sin título',
+      thumbnail: { thumbnails = [{ url: '' }] } = {},
+    } = d;
 
-		const duration =
-			typeof d.length === 'string'
-				? d.length
-				: d.length?.simpleText ?? 'Sin duración';
+    const duration =
+      typeof d.length === 'string'
+        ? d.length
+        : (d.length?.simpleText ?? 'Sin duración');
 
-		return {
-			videoUrl: `https://www.youtube.com/watch?v=${id}`,
-			videoId: id,
-			title,
-			imgVideo: thumbnails[0].url || '',
-			duration,
-		};
-	});
+    return {
+      videoUrl: `https://www.youtube.com/watch?v=${id}`,
+      videoId: id,
+      title,
+      imgVideo: thumbnails[0].url || '',
+      duration,
+    };
+  });
 };
 
 type FormatItem = {
-	duration: string;
-	title: string;
+  duration: string;
+  title: string;
 };
 
 const messageCustomFormat = (items: FormatItem[]) => {
-	return items.reduce((suma, act, i) => {
-		return `${suma == '' ? '' : suma + '\n\n'}${
-			'```option'.padEnd(12) + '``` : ' + (i + 1)
-		}\n${'```duration'.padEnd(12) + '``` : ' + act.duration}\n${
-			'```title'.padEnd(12) + '``` : ' + act.title
-		}`;
-	}, '');
+  return items.reduce((suma, act, i) => {
+    return `${suma == '' ? '' : suma + '\n\n'}${
+      '```option'.padEnd(12) + '``` : ' + (i + 1)
+    }\n${'```duration'.padEnd(12) + '``` : ' + act.duration}\n${
+      '```title'.padEnd(12) + '``` : ' + act.title
+    }`;
+  }, '');
 };
 
 // const convertMP3 = (pathVideo, pathOutput) => {
@@ -115,142 +126,142 @@ let formats = ['mp4', 'mp3'];
 let qualitys = ['highest', 'medium', 'lowest'];
 
 const optionSentence = (
-	array: string[],
-	sentenceD: string,
-	dataDefault: string
+  array: string[],
+  sentenceD: string,
+  dataDefault: string
 ) => {
-	let ff = sentenceD
-		.toLowerCase()
-		.split(' ')
-		.filter((el) => el !== '');
-	let ll = ff.find((e) => array.some((gg) => e == gg));
-	if (!ll) return dataDefault;
-	return ll;
+  let ff = sentenceD
+    .toLowerCase()
+    .split(' ')
+    .filter((el) => el !== '');
+  let ll = ff.find((e) => array.some((gg) => e == gg));
+  if (!ll) return dataDefault;
+  return ll;
 };
 
 const parseStringValues = (sentence: string) => {
-	let option = optionSentence(options, sentence, 'no');
-	let format = optionSentence(formats, sentence, 'no');
-	let quality = optionSentence(qualitys, sentence, 'no');
-	return { option, format, quality };
+  let option = optionSentence(options, sentence, 'no');
+  let format = optionSentence(formats, sentence, 'no');
+  let quality = optionSentence(qualitys, sentence, 'no');
+  return { option, format, quality };
 };
 
 const evalu = (option: string, format: string, quality: string) => {
-	// let hasData = 'yes'
-	let noData = 'no';
-	if (option == noData) {
-		return 'noDataOption';
-	}
-	if (option !== noData && format == noData && quality == noData) {
-		return { mode: 1, dataOptions: { option } };
-	}
+  // let hasData = 'yes'
+  let noData = 'no';
+  if (option == noData) {
+    return 'noDataOption';
+  }
+  if (option !== noData && format == noData && quality == noData) {
+    return { mode: 1, dataOptions: { option } };
+  }
 
-	return {
-		mode: 2,
-		dataOptions: {
-			option: option == 'no' ? '1' : option,
-			format: format == 'no' ? 'mp3' : format,
-			quality: quality == 'no' ? 'lowest' : quality,
-		},
-	};
+  return {
+    mode: 2,
+    dataOptions: {
+      option: option == 'no' ? '1' : option,
+      format: format == 'no' ? 'mp3' : format,
+      quality: quality == 'no' ? 'lowest' : quality,
+    },
+  };
 };
 
 const parseStringValues2 = (sentence: string, qualitysN: string[]) => {
-	let format = optionSentence(formats, sentence, 'no');
-	let numOptionQuality = optionSentence(qualitysN, sentence, 'no');
-	return { format, numOptionQuality };
+  let format = optionSentence(formats, sentence, 'no');
+  let numOptionQuality = optionSentence(qualitysN, sentence, 'no');
+  return { format, numOptionQuality };
 };
 
 const evalu2 = (format: string, numOptionQuality: string) => {
-	return {
-		format: format == 'no' ? 'mp4' : format,
-		numOptionQuality: numOptionQuality == 'no' ? '1' : numOptionQuality,
-	};
+  return {
+    format: format == 'no' ? 'mp4' : format,
+    numOptionQuality: numOptionQuality == 'no' ? '1' : numOptionQuality,
+  };
 };
 
 import Innertube from 'youtubei.js';
 
 export type QualityDescriptor = {
-	resolution: string | number;
-	ext: string;
-	itag?: number;
-	bitrate?: number;
+  resolution: string | number;
+  ext: string;
+  itag?: number;
+  bitrate?: number;
 };
 
 async function getUniqueQualities(
-	videoID: string
+  videoID: string
 ): Promise<QualityDescriptor[]> {
-	try {
-		const innertube = await Innertube.create();
+  try {
+    const innertube = await Innertube.create();
 
-		// const videoID = 'dQw4w9WgXcQ';
+    // const videoID = 'dQw4w9WgXcQ';
 
-		const videoInfo = await innertube.getBasicInfo(videoID);
+    const videoInfo = await innertube.getBasicInfo(videoID);
 
-		const formats = [
-			...(videoInfo.streaming_data?.formats || []),
-			...(videoInfo.streaming_data?.adaptive_formats || []),
-		];
+    const formats = [
+      ...(videoInfo.streaming_data?.formats || []),
+      ...(videoInfo.streaming_data?.adaptive_formats || []),
+    ];
 
-		const qualityMap = new Map<string | number, QualityDescriptor>();
+    const qualityMap = new Map<string | number, QualityDescriptor>();
 
-		const audioFormats = formats.filter(
-			(fmt) => !fmt.height && fmt.mime_type?.includes('audio')
-		);
+    const audioFormats = formats.filter(
+      (fmt) => !fmt.height && fmt.mime_type?.includes('audio')
+    );
 
-		if (audioFormats.length > 0) {
-			// ordenar por bitrate descendente y elegir el mejor
-			const bestAudio = audioFormats.sort(
-				(a, b) => (b.bitrate || 0) - (a.bitrate || 0)
-			)[0];
+    if (audioFormats.length > 0) {
+      // ordenar por bitrate descendente y elegir el mejor
+      const bestAudio = audioFormats.sort(
+        (a, b) => (b.bitrate || 0) - (a.bitrate || 0)
+      )[0];
 
-			qualityMap.set('audio', {
-				resolution: 'audio',
-				// ext: bestAudio.mime_type.includes('mp4') ? 'm4a' : 'webm',
-				ext: 'mp3',
-				itag: bestAudio.itag,
-				bitrate: bestAudio.bitrate,
-			});
-		}
+      qualityMap.set('audio', {
+        resolution: 'audio',
+        // ext: bestAudio.mime_type.includes('mp4') ? 'm4a' : 'webm',
+        ext: 'mp3',
+        itag: bestAudio.itag,
+        bitrate: bestAudio.bitrate,
+      });
+    }
 
-		formats.forEach((fmt) => {
-			const resolution = fmt.height;
-			if (!resolution) return; // descartar si es solo audio
+    formats.forEach((fmt) => {
+      const resolution = fmt.height;
+      if (!resolution) return; // descartar si es solo audio
 
-			if (!qualityMap.has(resolution)) {
-				qualityMap.set(resolution, {
-					// itag: fmt.itag,
-					resolution,
-					ext: 'mp4',
-					// mime_type: fmt.mime_type,
-					// codec: fmt.mime_type?.split('codecs="')[1]?.replace('"', ''),
-					// has_audio: !!fmt.audio_quality || fmt.mime_type.includes('audio'),
-					// container: fmt.mime_type?.split(';')[0],
-				});
-			}
-		});
+      if (!qualityMap.has(resolution)) {
+        qualityMap.set(resolution, {
+          // itag: fmt.itag,
+          resolution,
+          ext: 'mp4',
+          // mime_type: fmt.mime_type,
+          // codec: fmt.mime_type?.split('codecs="')[1]?.replace('"', ''),
+          // has_audio: !!fmt.audio_quality || fmt.mime_type.includes('audio'),
+          // container: fmt.mime_type?.split(';')[0],
+        });
+      }
+    });
 
-		// Ordenar por resolución
-		const ordered = Array.from(qualityMap.values()).sort((a, b) => {
-			if (a.resolution === 'audio') return -1;
-			if (b.resolution === 'audio') return 1;
-			return Number(a.resolution) - Number(b.resolution);
-		});
+    // Ordenar por resolución
+    const ordered = Array.from(qualityMap.values()).sort((a, b) => {
+      if (a.resolution === 'audio') return -1;
+      if (b.resolution === 'audio') return 1;
+      return Number(a.resolution) - Number(b.resolution);
+    });
 
-		return ordered;
-	} catch (err: any) {
-		console.error('Error al obtener calidades:', err.message);
+    return ordered;
+  } catch (err: any) {
+    console.error('Error al obtener calidades:', err.message);
 
-		throw new Error('No se pudieron obtener las calidades');
-	}
+    throw new Error('No se pudieron obtener las calidades');
+  }
 }
 
 const formatMessageInfo = (array: QualityDescriptor[]) => {
-	let datamesague = array.reduce((ant, format, i) => {
-		return `${ant} ${i + 1} : ${format.resolution} ${format.ext} \n`;
-	}, '');
+  let datamesague = array.reduce((ant, format, i) => {
+    return `${ant} ${i + 1} : ${format.resolution} ${format.ext} \n`;
+  }, '');
 
-	return datamesague;
+  return datamesague;
 };
 
 // const downloadG = async (url, index, name) => {
@@ -276,235 +287,235 @@ const formatMessageInfo = (array: QualityDescriptor[]) => {
 // };
 
 const generateRandomName = () => {
-	const characters =
-		'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-	const nameLength = 8;
+  const characters =
+    'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  const nameLength = 8;
 
-	let randomName = '';
-	for (let i = 0; i < nameLength; i++) {
-		const randomIndex = Math.floor(Math.random() * characters.length);
-		randomName += characters[randomIndex];
-	}
+  let randomName = '';
+  for (let i = 0; i < nameLength; i++) {
+    const randomIndex = Math.floor(Math.random() * characters.length);
+    randomName += characters[randomIndex];
+  }
 
-	return randomName;
+  return randomName;
 };
 
 function findGeneratedFile(randomName: string, ext: string): string | null {
-	const files = fs.readdirSync(process.cwd());
-	const match = files.find(
-		(file) =>
-			file.includes(randomName) && file.toLowerCase().endsWith(`.${ext}`)
-	);
-	return match ? path.resolve(match) : null;
+  const files = fs.readdirSync(process.cwd());
+  const match = files.find(
+    (file) =>
+      file.includes(randomName) && file.toLowerCase().endsWith(`.${ext}`)
+  );
+  return match ? path.resolve(match) : null;
 }
 
 export type DownloadProgress = {
-	type: 'video' | 'audio';
-	downloaded: number;
-	total: number;
-	percent: number;
+  type: 'video' | 'audio';
+  downloaded: number;
+  total: number;
+  percent: number;
 };
 
 const downloadVideo = async (opts: {
-	url: string;
-	resolution?: number | string | null;
-	audioOnly?: boolean;
-	allowLowerQuality?: boolean;
-	onProgress?: (p: DownloadProgress) => void | Promise<void>;
-	onWarning?: (w: { text: string }) => void | Promise<void>;
+  url: string;
+  resolution?: number | string | null;
+  audioOnly?: boolean;
+  allowLowerQuality?: boolean;
+  onProgress?: (p: DownloadProgress) => void | Promise<void>;
+  onWarning?: (w: { text: string }) => void | Promise<void>;
 }): Promise<string> => {
-	const {
-		url,
-		resolution = null,
-		audioOnly = false,
-		allowLowerQuality = false,
-		onProgress,
-		onWarning,
-	} = opts;
-	const yt_dlp_path = ytdlpPath;
-	const randomName = generateRandomName();
-	const outputTemplate = `%(title).80s__${randomName}.%(ext)s`;
-	const finalExtension = audioOnly ? 'mp3' : 'mp4';
+  const {
+    url,
+    resolution = null,
+    audioOnly = false,
+    allowLowerQuality = false,
+    onProgress,
+    onWarning,
+  } = opts;
+  const yt_dlp_path = ytdlpPath;
+  const randomName = generateRandomName();
+  const outputTemplate = `%(title).80s__${randomName}.%(ext)s`;
+  const finalExtension = audioOnly ? 'mp3' : 'mp4';
 
-	const baseArgs = audioOnly
-		? ['--extract-audio', '--audio-format', 'mp3']
-		: ['--merge-output-format', 'mp4'];
+  const baseArgs = audioOnly
+    ? ['--extract-audio', '--audio-format', 'mp3']
+    : ['--merge-output-format', 'mp4'];
 
-	const resolutionSelector = allowLowerQuality
-		? `height<=${resolution}`
-		: `height=${resolution}`;
+  const resolutionSelector = allowLowerQuality
+    ? `height<=${resolution}`
+    : `height=${resolution}`;
 
-	const formatSelector = audioOnly
-		? 'ba[ext=m4a]/bestaudio'
-		: `bv*[ext=mp4][${resolutionSelector}]+ba[ext=m4a]/mp4`;
+  const formatSelector = audioOnly
+    ? 'ba[ext=m4a]/bestaudio'
+    : `bv*[ext=mp4][${resolutionSelector}]+ba[ext=m4a]/mp4`;
 
-	const progress = [
-		'--newline',
-		'--progress',
-		'--progress-delta',
-		'3',
-		'--progress-template',
-		// 'download:%(progress.downloaded_bytes)s|%(progress.total_bytes)s',
-		// '%(progress._default_template)s',
-		// 'download:[%(ext)s]%(progress.downloaded_bytes)s|%(progress.total_bytes)s',
-		// 'download:%(filename)s|%(progress.downloaded_bytes)s|%(progress.total_bytes)s',
-		'download:%(info.ext)s|%(progress.downloaded_bytes)s|%(progress.total_bytes)s',
-	];
+  const progress = [
+    '--newline',
+    '--progress',
+    '--progress-delta',
+    '3',
+    '--progress-template',
+    // 'download:%(progress.downloaded_bytes)s|%(progress.total_bytes)s',
+    // '%(progress._default_template)s',
+    // 'download:[%(ext)s]%(progress.downloaded_bytes)s|%(progress.total_bytes)s',
+    // 'download:%(filename)s|%(progress.downloaded_bytes)s|%(progress.total_bytes)s',
+    'download:%(info.ext)s|%(progress.downloaded_bytes)s|%(progress.total_bytes)s',
+  ];
 
-	// Armar array de argumentos completo
-	const args = [
-		'--no-playlist',
-		'-f',
-		formatSelector,
-		'-o',
-		outputTemplate,
-		...baseArgs,
-		...progress,
-		url,
-	];
+  // Armar array de argumentos completo
+  const args = [
+    '--no-playlist',
+    '-f',
+    formatSelector,
+    '-o',
+    outputTemplate,
+    ...baseArgs,
+    ...progress,
+    url,
+  ];
 
-	console.log('⏬ Ejecutando comando:', args.join(' '));
+  console.log('⏬ Ejecutando comando:', args.join(' '));
 
-	return new Promise((resolve, reject) => {
-		const dwn = spawn(yt_dlp_path, args);
+  return new Promise((resolve, reject) => {
+    const dwn = spawn(yt_dlp_path, args);
 
-		dwn.stdout.on('data', (data) => {
-			const line = data.toString().trim();
+    dwn.stdout.on('data', (data) => {
+      const line = data.toString().trim();
 
-			// console.log(line);
+      // console.log(line);
 
-			const lines = data.toString().trim().split('\n');
-			for (const line of lines) {
-				const m1 = line.match(/^(\w+)\|(\d+)\|(\d+)$/);
+      const lines = data.toString().trim().split('\n');
+      for (const line of lines) {
+        const m1 = line.match(/^(\w+)\|(\d+)\|(\d+)$/);
 
-				console.log({ m1 });
-				if (!m1) continue;
+        console.log({ m1 });
+        if (!m1) continue;
 
-				const [, fileOrExt, downloadedStr, totalStr] = m1;
-				let currentType: 'video' | 'audio';
-				let downloaded = Number(downloadedStr);
-				let total = Number(totalStr);
+        const [, fileOrExt, downloadedStr, totalStr] = m1;
+        let currentType: 'video' | 'audio';
+        let downloaded = Number(downloadedStr);
+        let total = Number(totalStr);
 
-				currentType = fileOrExt === 'mp4' ? 'video' : 'audio';
+        currentType = fileOrExt === 'mp4' ? 'video' : 'audio';
 
-				const percent = ((downloaded / total) * 100).toFixed(1);
+        const percent = ((downloaded / total) * 100).toFixed(1);
 
-				if (onProgress) {
-					console.log('se ejecuta onProgress');
-					console.log(Number(percent));
-					onProgress({
-						type: currentType,
-						downloaded,
-						total,
-						percent: Number(percent),
-					});
-				}
-			}
-		});
+        if (onProgress) {
+          console.log('se ejecuta onProgress');
+          console.log(Number(percent));
+          onProgress({
+            type: currentType,
+            downloaded,
+            total,
+            percent: Number(percent),
+          });
+        }
+      }
+    });
 
-		let errorOutput = '';
-		dwn.stderr.on('data', async (data) => {
-			if (data) {
-				errorOutput += data.toString();
-				// return reject(data);
-			}
-		});
+    let errorOutput = '';
+    dwn.stderr.on('data', async (data) => {
+      if (data) {
+        errorOutput += data.toString();
+        // return reject(data);
+      }
+    });
 
-		dwn.on('close', (code) => {
-			if (code === 0) {
-				console.log('✅ Descarga completada.');
-				const finalPath = findGeneratedFile(randomName, finalExtension);
+    dwn.on('close', (code) => {
+      if (code === 0) {
+        console.log('✅ Descarga completada.');
+        const finalPath = findGeneratedFile(randomName, finalExtension);
 
-				if (!finalPath) {
-					return reject(
-						new Error('❌ Archivo no encontrado después de la descarga')
-					);
-				}
+        if (!finalPath) {
+          return reject(
+            new Error('❌ Archivo no encontrado después de la descarga')
+          );
+        }
 
-				console.log(`✅ Archivo guardado como: ${finalPath}`);
-				resolve(finalPath);
-			} else {
-				reject(new Error(errorOutput.trim()));
-			}
-		});
-	});
+        console.log(`✅ Archivo guardado como: ${finalPath}`);
+        resolve(finalPath);
+      } else {
+        reject(new Error(errorOutput.trim()));
+      }
+    });
+  });
 };
 
 const downloadVideoS = async ({
-	url,
-	resolution,
-	audioOnly,
-	allowLowerQuality,
-	onProgress,
-	onWarning,
+  url,
+  resolution,
+  audioOnly,
+  allowLowerQuality,
+  onProgress,
+  onWarning,
 }: {
-	url: string;
-	resolution?: number | string | null;
-	audioOnly?: boolean;
-	allowLowerQuality?: boolean;
-	onProgress?: (p: DownloadProgress) => void | Promise<void>;
-	onWarning?: (w: { text: string }) => void | Promise<void>;
+  url: string;
+  resolution?: number | string | null;
+  audioOnly?: boolean;
+  allowLowerQuality?: boolean;
+  onProgress?: (p: DownloadProgress) => void | Promise<void>;
+  onWarning?: (w: { text: string }) => void | Promise<void>;
 }) => {
-	let pathVideo = '';
-	try {
-		pathVideo = await downloadVideo({
-			url,
-			resolution,
-			audioOnly,
-			allowLowerQuality: false,
-			onProgress,
-		});
-	} catch (error: any) {
-		console.log(error);
+  let pathVideo = '';
+  try {
+    pathVideo = await downloadVideo({
+      url,
+      resolution,
+      audioOnly,
+      allowLowerQuality: false,
+      onProgress,
+    });
+  } catch (error: any) {
+    console.log(error);
 
-		const errorMessage = error.message;
+    const errorMessage = error.message;
 
-		const notAvailableMsg = 'Requested format is not available';
-		const isFormatAvailable = !errorMessage.includes(notAvailableMsg);
-		if (errorMessage.startsWith('ERROR:') && !isFormatAvailable) {
-			// console.warn(
-			// 	`⚠️ No se encontró resolución exacta (${resolution}p). Usando calidad menor o igual disponible...`
-			// );
+    const notAvailableMsg = 'Requested format is not available';
+    const isFormatAvailable = !errorMessage.includes(notAvailableMsg);
+    if (errorMessage.startsWith('ERROR:') && !isFormatAvailable) {
+      // console.warn(
+      // 	`⚠️ No se encontró resolución exacta (${resolution}p). Usando calidad menor o igual disponible...`
+      // );
 
-			console.error(`Error ejecutando yt-dlp: ${errorMessage}`);
-			// return reject('noResolutionAvailable');
+      console.error(`Error ejecutando yt-dlp: ${errorMessage}`);
+      // return reject('noResolutionAvailable');
 
-			if (!allowLowerQuality) {
-				throw new Error('⚠️ Resolución exacta no disponible');
-			}
+      if (!allowLowerQuality) {
+        throw new Error('⚠️ Resolución exacta no disponible');
+      }
 
-			console.warn(' Reintentando con calidad menor o igual');
+      console.warn(' Reintentando con calidad menor o igual');
 
-			if (onWarning) {
-				console.log('se ejecuta onWarning');
-				await onWarning({
-					text: '⚠️ Resolución exacta no disponible. Reintentando con calidad menor o igual...',
-				});
-			}
+      if (onWarning) {
+        console.log('se ejecuta onWarning');
+        await onWarning({
+          text: '⚠️ Resolución exacta no disponible. Reintentando con calidad menor o igual...',
+        });
+      }
 
-			try {
-				pathVideo = await downloadVideo({
-					url,
-					resolution,
-					audioOnly,
-					allowLowerQuality,
-					onProgress,
-					onWarning,
-				});
-			} catch (fallbackError) {
-				console.error('❌ Fallback también falló:', fallbackError);
+      try {
+        pathVideo = await downloadVideo({
+          url,
+          resolution,
+          audioOnly,
+          allowLowerQuality,
+          onProgress,
+          onWarning,
+        });
+      } catch (fallbackError) {
+        console.error('❌ Fallback también falló:', fallbackError);
 
-				throw new Error(
-					'❌ No se pudo descargar el video con ninguna calidad disponible.'
-				);
-			}
-		} else {
-			console.error(`Error inesperado ejecutando yt-dlp: ${errorMessage}`);
-			throw new Error('❌ Error inesperado');
-		}
-	}
+        throw new Error(
+          '❌ No se pudo descargar el video con ninguna calidad disponible.'
+        );
+      }
+    } else {
+      console.error(`Error inesperado ejecutando yt-dlp: ${errorMessage}`);
+      throw new Error('❌ Error inesperado');
+    }
+  }
 
-	return pathVideo;
+  return pathVideo;
 };
 
 // const joinVideoAndAudio = (videoPath, audioPath, ouputName) => {
@@ -559,219 +570,219 @@ const downloadVideoS = async ({
 // }
 
 const deleteFile = (files: string[]) => {
-	files.map((fileName) => {
-		fs.unlink(fileName, (err) => {
-			if (err) {
-				console.error('Error al borrar el archivo:', err);
-			} else {
-				// console.log('Archivo borrado exitosamente:', fileName);
-			}
-		});
-	});
+  files.map((fileName) => {
+    fs.unlink(fileName, (err) => {
+      if (err) {
+        console.error('Error al borrar el archivo:', err);
+      } else {
+        // console.log('Archivo borrado exitosamente:', fileName);
+      }
+    });
+  });
 };
 
 export type CliArgDef = { name: string; required?: boolean };
 export type CliFlagDef = {
-	name: string;
-	alias: string;
-	type: 'boolean' | 'string' | 'number';
-	value?: any;
+  name: string;
+  alias: string;
+  type: 'boolean' | 'string' | 'number';
+  value?: any;
 };
 export type CliConfig = {
-	name: string;
-	args?: CliArgDef[];
-	flags?: CliFlagDef[];
-	allowHelp?: boolean;
+  name: string;
+  args?: CliArgDef[];
+  flags?: CliFlagDef[];
+  allowHelp?: boolean;
 };
 
 // Tokenizar input
 function tokenize(input: string) {
-	return (
-		input
-			.match(/"[^"]*"|\S+/g)
-			?.map((token) => token.replace(/^"(.+)"$/, '$1')) || []
-	);
+  return (
+    input
+      .match(/"[^"]*"|\S+/g)
+      ?.map((token) => token.replace(/^"(.+)"$/, '$1')) || []
+  );
 }
 
 // Detectar comando,argumentos y flags
 function parseCLI(input: string, config: CliConfig) {
-	// Tokenizamos
-	const tokens = tokenize(input.trim());
+  // Tokenizamos
+  const tokens = tokenize(input.trim());
 
-	if (!tokens.length) {
-		throw new Error('No se proporcionó ningún comando.');
-	}
+  if (!tokens.length) {
+    throw new Error('No se proporcionó ningún comando.');
+  }
 
-	// Extraer nombre del comando
-	const commandName = tokens[0];
-	// console.log('Comando detectado:', commandName);
-	if (commandName !== config.name) {
-		throw new Error(
-			`Se esperaba el comando "${config.name}", pero se recibió "${commandName}".`
-		);
-	}
+  // Extraer nombre del comando
+  const commandName = tokens[0];
+  // console.log('Comando detectado:', commandName);
+  if (commandName !== config.name) {
+    throw new Error(
+      `Se esperaba el comando "${config.name}", pero se recibió "${commandName}".`
+    );
+  }
 
-	//Soporte opcional para "help"
-	if (config.allowHelp && (tokens[1] === 'help' || tokens[1] === '--help')) {
-		return { command: commandName, help: true };
-	}
+  //Soporte opcional para "help"
+  if (config.allowHelp && (tokens[1] === 'help' || tokens[1] === '--help')) {
+    return { command: commandName, help: true };
+  }
 
-	// Resultado inicial
-	const result: {
-		command: string;
-		args: Record<string, string | number>;
-		options: Record<string, any>;
-	} = { command: commandName, args: {}, options: {} };
+  // Resultado inicial
+  const result: {
+    command: string;
+    args: Record<string, string | number>;
+    options: Record<string, any>;
+  } = { command: commandName, args: {}, options: {} };
 
-	// Procesar argumentos posicionales
-	// Empezamos en 1 porque el índice 0 es el comando
-	let i = 1;
-	for (const argDef of config.args || []) {
-		const next = tokens[i];
-		// console.log(`Revisando posicional "${argDef.name}" en token[${i}]:`, next);
+  // Procesar argumentos posicionales
+  // Empezamos en 1 porque el índice 0 es el comando
+  let i = 1;
+  for (const argDef of config.args || []) {
+    const next = tokens[i];
+    // console.log(`Revisando posicional "${argDef.name}" en token[${i}]:`, next);
 
-		if (!next || next.startsWith('-')) {
-			if (argDef.required) {
-				throw new Error(`Falta el argumento obligatorio: ${argDef.name}`);
-			} else {
-				// console.log(`→ "${argDef.name}" es opcional y no estaba.`);
-				continue;
-			}
-		}
+    if (!next || next.startsWith('-')) {
+      if (argDef.required) {
+        throw new Error(`Falta el argumento obligatorio: ${argDef.name}`);
+      } else {
+        // console.log(`→ "${argDef.name}" es opcional y no estaba.`);
+        continue;
+      }
+    }
 
-		result.args[argDef.name] = next;
-		// console.log(`→ Asignado args.${argDef.name} = "${next}"`);
-		i++;
-	}
+    result.args[argDef.name] = next;
+    // console.log(`→ Asignado args.${argDef.name} = "${next}"`);
+    i++;
+  }
 
-	// Proceso de flags
-	for (; i < tokens.length; i++) {
-		const token = tokens[i];
-		// console.log(`Procesando flag/token[${i}]:`, token);
+  // Proceso de flags
+  for (; i < tokens.length; i++) {
+    const token = tokens[i];
+    // console.log(`Procesando flag/token[${i}]:`, token);
 
-		// Buscar definición de flag
-		const flagDef = (config.flags || []).find(
-			(f) => f.alias === token || f.name === token
-		);
-		if (!flagDef) {
-			throw new Error(`Opción desconocida: ${token}`);
-		}
-		// console.log('→ Flag reconocida:', flagDef);
+    // Buscar definición de flag
+    const flagDef = (config.flags || []).find(
+      (f) => f.alias === token || f.name === token
+    );
+    if (!flagDef) {
+      throw new Error(`Opción desconocida: ${token}`);
+    }
+    // console.log('→ Flag reconocida:', flagDef);
 
-		// Value implícito
-		if ('value' in flagDef && flagDef.value !== undefined) {
-			result.options[flagDef.name] = flagDef.value;
-			// console.log(`→ options.${flagDef.name} = ${flagDef.value} (value implícito)`);
-			continue;
-		}
+    // Value implícito
+    if ('value' in flagDef && flagDef.value !== undefined) {
+      result.options[flagDef.name] = flagDef.value;
+      // console.log(`→ options.${flagDef.name} = ${flagDef.value} (value implícito)`);
+      continue;
+    }
 
-		// Boolean
-		if (flagDef.type === 'boolean') {
-			result.options[flagDef.name] = true;
-			// console.log(`→ options.${flagDef.name} = true (boolean flag)`);
-			continue;
-		}
+    // Boolean
+    if (flagDef.type === 'boolean') {
+      result.options[flagDef.name] = true;
+      // console.log(`→ options.${flagDef.name} = true (boolean flag)`);
+      continue;
+    }
 
-		// String o Number → consumir siguiente token
-		const raw = tokens[++i];
-		// console.log(`→ Leyendo valor para "${flagDef.alias}" desde token[${i}]:`, raw);
-		if (!raw || raw.startsWith('-')) {
-			throw new Error(`La opción ${flagDef.alias} requiere un valor.`);
-		}
-		const parsedValue = flagDef.type === 'number' ? Number(raw) : raw;
-		result.options[flagDef.name] = parsedValue;
-		// console.log(`→ options.${flagDef.name} = ${parsedValue}`);
-	}
+    // String o Number → consumir siguiente token
+    const raw = tokens[++i];
+    // console.log(`→ Leyendo valor para "${flagDef.alias}" desde token[${i}]:`, raw);
+    if (!raw || raw.startsWith('-')) {
+      throw new Error(`La opción ${flagDef.alias} requiere un valor.`);
+    }
+    const parsedValue = flagDef.type === 'number' ? Number(raw) : raw;
+    result.options[flagDef.name] = parsedValue;
+    // console.log(`→ options.${flagDef.name} = ${parsedValue}`);
+  }
 
-	// console.log('Resultado final:', result);
-	return result;
+  // console.log('Resultado final:', result);
+  return result;
 }
 
 function updateYtDlp() {
-	return new Promise<string>((resolve, reject) => {
-		const updater = spawn(ytdlpPath, ['-U']); // -U = update
+  return new Promise<string>((resolve, reject) => {
+    const updater = spawn(ytdlpPath, ['-U']); // -U = update
 
-		let output = '';
-		let errorOutput = '';
+    let output = '';
+    let errorOutput = '';
 
-		updater.stdout.on('data', (data) => {
-			output += data.toString();
-		});
+    updater.stdout.on('data', (data) => {
+      output += data.toString();
+    });
 
-		updater.stderr.on('data', (data) => {
-			errorOutput += data.toString();
-		});
+    updater.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+    });
 
-		updater.on('close', (code) => {
-			if (code === 0) {
-				console.log('✅ yt-dlp actualizado correctamente.');
-				resolve(output.trim());
-			} else {
-				reject(
-					new Error(`❌ Error actualizando yt-dlp: ${errorOutput.trim()}`)
-				);
-			}
-		});
-	});
+    updater.on('close', (code) => {
+      if (code === 0) {
+        console.log('✅ yt-dlp actualizado correctamente.');
+        resolve(output.trim());
+      } else {
+        reject(
+          new Error(`❌ Error actualizando yt-dlp: ${errorOutput.trim()}`)
+        );
+      }
+    });
+  });
 }
 
 async function isFileUnderSizeLimit(
-	filePath: string,
-	maxSizeMB = 100
+  filePath: string,
+  maxSizeMB = 100
 ): Promise<boolean> {
-	try {
-		const { size: fileSizeBytes } = await fsPromises.stat(filePath);
-		const maxSizeBytes = maxSizeMB * 1024 * 1024;
+  try {
+    const { size: fileSizeBytes } = await fsPromises.stat(filePath);
+    const maxSizeBytes = maxSizeMB * 1024 * 1024;
 
-		return fileSizeBytes < maxSizeBytes;
-	} catch (error) {
-		console.error('Failed to read file info:', error);
-		return false; // safe fallback
-	}
+    return fileSizeBytes < maxSizeBytes;
+  } catch (error) {
+    console.error('Failed to read file info:', error);
+    return false; // safe fallback
+  }
 }
 
 async function loadTexts(
-	basePath: string,
-	overridePath: string
+  basePath: string,
+  overridePath: string
 ): Promise<Record<string, any>> {
-	let base: any = {};
-	let override: any = {};
+  let base: any = {};
+  let override: any = {};
 
-	try {
-		base = await import(basePath, { with: { type: 'json' } });
-	} catch {}
+  try {
+    base = await import(basePath, { with: { type: 'json' } });
+  } catch {}
 
-	try {
-		override = await import(overridePath, { with: { type: 'json' } });
-	} catch {}
+  try {
+    override = await import(overridePath, { with: { type: 'json' } });
+  } catch {}
 
-	return { ...(base?.default ?? {}), ...(override?.default ?? {}) };
+  return { ...(base?.default ?? {}), ...(override?.default ?? {}) };
 }
 
 export {
-	getDataSearch,
-	parseSearchData,
-	messageCustomFormat,
-	// convertMP3,
-	parseStringValues2,
-	parseStringValues,
-	evalu,
-	evalu2,
-	formatMessageInfo,
-	// getVideoInfo,
-	// getVideoInfo2,
-	// downloadG,
-	downloadVideo,
-	downloadVideoS,
-	// joinVideoAndAudio,
-	// totalFileSize,
-	// checkTotalFileSize,
-	// renameVideo,
-	// generateRandomName,
-	deleteFile,
-	parseCLI,
-	getUniqueQualities,
-	updateYtDlp,
-	isFileUnderSizeLimit,
-	loadTexts,
+  getDataSearch,
+  parseSearchData,
+  messageCustomFormat,
+  // convertMP3,
+  parseStringValues2,
+  parseStringValues,
+  evalu,
+  evalu2,
+  formatMessageInfo,
+  // getVideoInfo,
+  // getVideoInfo2,
+  // downloadG,
+  downloadVideo,
+  downloadVideoS,
+  // joinVideoAndAudio,
+  // totalFileSize,
+  // checkTotalFileSize,
+  // renameVideo,
+  // generateRandomName,
+  deleteFile,
+  parseCLI,
+  getUniqueQualities,
+  updateYtDlp,
+  isFileUnderSizeLimit,
+  loadTexts,
 };
