@@ -33,6 +33,7 @@ class Connectbaileys {
 			// can provide additional config here
 			// printQRInTerminal: true,
 			// version: [2, 3000, 1025190524],
+      version: [2, 3000, 1033893291],
 			auth: state,
 			logger: log({ level: 'silent' }),
 		});
