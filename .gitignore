@@ -1,5 +1,6 @@
 #
 lbSbot/config/access.ts
+lbSbot/lib/filter.ts
 
 # dependencies
 /node_modules

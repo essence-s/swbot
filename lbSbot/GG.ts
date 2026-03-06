@@ -1,7 +1,7 @@
 import type { BaileysEventMap, WASocket } from 'baileys';
 import { DisconnectReason, makeWASocket, useMultiFileAuthState } from 'baileys';
-
 import qrcode from 'qrcode-terminal';
+import { matcher, normalizeText } from './lib/filter.ts';
 
 import { Boom } from '@hapi/boom';
 import pino from 'pino';
@@ -105,6 +105,22 @@ class Connectbaileys {
 
         const messageText = extractText(messageObject);
         if (!messageText) return console.log('message not found');
+        const resultNormalizeText = normalizeText(messageText);
+
+        if (
+          resultNormalizeText == 'miniFilterDetected' ||
+          matcher.hasMatch(resultNormalizeText)
+        ) {
+          await sock.sendMessage(remoteJid, {
+            delete: messageObject.key,
+          });
+
+          await sock.sendMessage(remoteJid, {
+            text: '⚠️ lenguaje no permitido',
+          });
+
+          return;
+        }
 
         if (!messageObject.message) return;
         messageObject.message.conversation = messageText;
