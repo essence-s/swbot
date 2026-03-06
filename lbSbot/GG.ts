@@ -8,6 +8,7 @@ import pino from 'pino';
 const log = pino;
 
 import { FunctionsFlow } from './functionsFlow.ts';
+import { hasAccess } from './lib/utils.ts';
 import type { Command, SubFlowStep } from './types/command.ts';
 import type { User } from './users.ts';
 import {
@@ -72,20 +73,23 @@ class Connectbaileys {
     this.vendor.ev.on(
       'messages.upsert',
       async (m: BaileysEventMap['messages.upsert']) => {
-        // console.log('mensajitos');
-        // console.dir(m.messages, { depth: null });
         // console.dir(m, { depth: null });
-
         const messageObject = m.messages[0];
+        // console.dir(messageObject, { depth: null });
+
+        // el remoteJid es el identificador para enviar mensajes , un grupo tiene uno y un chat personal tambien, es unico
+        const remoteJid = messageObject.key.remoteJid;
+        const remoteJidAlt = messageObject.key.remoteJidAlt;
+        if (!remoteJid) return console.log('no tiene remoteJid');
+
+        // dar acceso solo a la lista permitida
+        if (!hasAccess(remoteJid, remoteJidAlt)) return;
 
         // comment
         // if (messageObject?.key.fromMe) return console.log('no entra');
         if (!messageObject?.key.participant && messageObject?.key.fromMe)
           return console.log('no entra');
 
-        // el remoteJid es el identificador para enviar mensajes , un grupo tiene uno y un chat personal tambien, es unico
-        let remoteJid = messageObject.key.remoteJid;
-        if (!remoteJid) return console.log('no tiene remoteJid');
         // En grupos, el remitente real está en `key.participant`.
         // Si no existe, es un chat individual y usamos `remoteJid`.
         let participant = messageObject.key.participant || remoteJid;
