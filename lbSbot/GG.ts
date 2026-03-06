@@ -88,15 +88,15 @@ class Connectbaileys {
         // comment
         // if (messageObject?.key.fromMe) return console.log('no entra');
         if (!messageObject?.key.participant && messageObject?.key.fromMe)
-          return console.log('no entra');
+          return;
 
         // En grupos, el remitente real está en `key.participant`.
         // Si no existe, es un chat individual y usamos `remoteJid`.
         let participant = messageObject.key.participant || remoteJid;
 
         let numberT = participant.split('@')[0];
-        console.log('sender (numberT):', numberT);
-        console.log('is processing: ' + isProcessing(numberT));
+        // console.log('sender (numberT):', numberT);
+        // console.log('is processing: ' + isProcessing(numberT));
 
         if (isProcessing(numberT)) return;
         // return await this.vendor.sendMessage(remoteJid, {
@@ -186,7 +186,7 @@ class Connectbaileys {
 
               let sectionFunction = flowCurrent9.currentSection;
               // console.log(newSubFlow);
-              console.log({ sectionFunction });
+              // console.log({ sectionFunction });
               // console.log(newSubFlow[sectionFunction].word);
               if (newSubFlow[sectionFunction].word) {
                 await this.vendor.sendMessage(remoteJid, {

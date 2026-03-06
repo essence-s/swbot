@@ -53,7 +53,7 @@ Usa el comando con el enlace del video y agrega las opciones para elegir formato
       const match = parsed?.args?.url?.match(urlRegex);
       if (match) {
         dataUser.parsed = parsed;
-        console.log(match[0]);
+        // console.log(match[0]);
         redirectToSubflow('fastDownload');
 
         // redireccion
